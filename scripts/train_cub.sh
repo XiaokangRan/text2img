@@ -26,6 +26,7 @@ trainids=${CUB_META_DIR}/trainvalids.txt \
 init_t=${CUB_NET_TXT} \
 nThreads=6 \
 checkpoint_dir=${CHECKPOINT_DIR} \
+out_image_dir=${CUB_IMG_OUT_DIR} \
 numCaption=${NC} \
 print_every=4 \
 save_every=100 \

@@ -7,6 +7,7 @@ require 'torch'
 require 'nn'
 require 'nngraph'
 require 'optim'
+require 'image'
 
 opt = {
    numCaption = 4,
@@ -25,6 +26,7 @@ opt = {
    classnames = '/home/reedscot/data/cub/allclasses.txt',
    trainids = '/home/reedscot/data/cub/allids.txt',
    checkpoint_dir = '/home/reedscot/checkpoints',
+   out_image_dir = '/scratch/sv1358/text2img_data/img_output/',
    numshot = 0,
    batchSize = 64,
    doc_length = 201,
@@ -42,7 +44,7 @@ opt = {
    decay_every = 100,
    beta1 = 0.5,            -- momentum term of adam
    ntrain = math.huge,     -- #  of examples per epoch. math.huge for full dataset
-   display = 1,            -- display samples while training. 0 = false
+   display = 0,            -- display samples while training. 0 = false
    display_id = 10,        -- display window id.
    gpu = 2,                -- gpu = 0 is CPU mode. gpu=X is GPU mode on GPU X
    name = 'experiment_long',
@@ -442,8 +444,14 @@ for epoch = 1, opt.niter do
               errG and errG or -1, errD and errD or -1,
               errW and errW or -1))
       local fake = netG.output
-      disp.image(fake:narrow(1,1,opt.batchSize), {win=opt.display_id, title=opt.name})
-      disp.image(real_img, {win=opt.display_id * 3, title=opt.name})
+      if opt.display then
+        disp.image(fake:narrow(1,1,opt.batchSize), {win=opt.display_id, title=opt.name})
+        disp.image(real_img, {win=opt.display_id * 3, title=opt.name})
+      end
+      fake_out = image.toDisplayTensor(fake:narrow(1,1,opt.batchSize))
+      image.save(opt.out_image_dir .. 'fake_' .. epoch .. '_' .. i .. '.png', fake_out)
+      real_out = image.toDisplayTensor(real_img)
+      image.save(opt.out_image_dir .. 'real_' .. epoch .. '_' .. i .. '.png', real_out)
     end
   end
   if epoch % opt.save_every == 0 then

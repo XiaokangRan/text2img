@@ -1,7 +1,7 @@
 . CONFIG
 
-ID=2
-GPU=3
+ID=1
+GPU=1
 NC=4
 CLS=0.5
 INT=1.0
@@ -26,6 +26,7 @@ trainids=${FLOWERS_META_DIR}/trainvalids.txt \
 init_t=${FLOWERS_NET_TXT} \
 nThreads=6 \
 checkpoint_dir=${CHECKPOINT_DIR} \
+out_image_dir=${FLOWERS_IMG_OUT_DIR} \
 numCaption=${NC} \
 print_every=4 \
 save_every=100 \
