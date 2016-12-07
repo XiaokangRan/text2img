@@ -49,6 +49,8 @@ opt = {
    gpu = 2,                -- gpu = 0 is CPU mode. gpu=X is GPU mode on GPU X
    name = 'experiment_long',
    noise = 'normal',       -- uniform / normal
+   cont_codes = 5,         -- number of continuous latent codes
+   cont_range = 1.0,       -- uniform between [-cont_range, cont_range]
    init_g = '',
    init_d = '',
    use_cudnn = 0,
@@ -369,10 +371,11 @@ local fDx = function(x)
 
   -- train with fake
   if opt.noise == 'uniform' then -- regenerate random noise
-    noise:uniform(-1, 1)
+    noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
   elseif opt.noise == 'normal' then
-    noise:normal(0, 1)
+    noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
   end
+  noise[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
   local fake = netG:forward{noise, input_txt}
   input_img:copy(fake)
   label:fill(fake_label)
@@ -399,10 +402,12 @@ local fGx = function(x)
   gradParametersG:zero()
 
   if opt.noise == 'uniform' then -- regenerate random noise
-    noise_interp:uniform(-1, 1)
+    noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
   elseif opt.noise == 'normal' then
-    noise_interp:normal(0, 1)
+    noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
   end
+  noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
+
   local fake = netG:forward{noise_interp, input_txt_interp}
   input_img_interp:copy(fake)
   label_interp:fill(real_label) -- fake labels are real for generator cost
