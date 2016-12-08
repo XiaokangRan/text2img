@@ -9,10 +9,6 @@ require 'nngraph'
 require 'optim'
 require 'image'
 
---nngraph.setDebug(true)
-
-dists = require 'dists'
-
 opt = {
    numCaption = 4,
    replicate = 1, -- if 1, then replicate averaged text features numCaption times.
@@ -177,9 +173,6 @@ end
 
 
 if opt.init_d == '' then
-  local image = nn.Identity()()
-  local text = nn.Identity()()
-
   convD = nn.Sequential()
   -- input is (nc) x 64 x 64
   convD:add(SpatialConvolution(nc, ndf, 4, 4, 2, 2, 1, 1))
@@ -216,34 +209,21 @@ if opt.init_d == '' then
   fcD:add(nn.BatchNormalization(opt.nt))
   fcD:add(nn.LeakyReLU(0.2,true))
   fcD:add(nn.Replicate(4,3))
-  fcD:add(nn.Replicate(4,4))
-
-  -- convert to ops
-  convD = convD(image)
-  fcD = fcD(text)
-
-  local netQ = nn.Sequential()
+  fcD:add(nn.Replicate(4,4)) 
+  netD = nn.Sequential()
+  pt = nn.ParallelTable()
+  pt:add(convD)
+  pt:add(fcD)
+  netD:add(pt)
+  netD:add(nn.JoinTable(2))
   -- state size: (ndf*8 + 128) x 4 x 4
-  netQ:add(SpatialConvolution(ndf * 8, ndf * 8, 1, 1))
-  netQ:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
-  netQ:add(nn.View(ndf * 8 * 4 * 4))
-  netQ:add(nn.Linear(ndf * 8 * 4 * 4, opt.cont_codes * 2))
-
-  local joined = nn.JoinTable(2)({convD, fcD})
-
-  local preD = nn.Sequential()
-  -- state size: (ndf*8 + 128) x 4 x 4
-  preD:add(SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1))
-  preD:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
-  preD:add(SpatialConvolution(ndf * 8, 1, 4, 4))
-  preD:add(nn.Sigmoid())
+  netD:add(SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1))
+  netD:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
+  netD:add(SpatialConvolution(ndf * 8, 1, 4, 4))
+  netD:add(nn.Sigmoid())
   -- state size: 1 x 1 x 1
-  preD:add(nn.View(1):setNumInputDims(3))
-
+  netD:add(nn.View(1):setNumInputDims(3))
   -- state size: 1
-  local d_out = preD(joined)
-  local q_out = netQ(convD)
-  netD = nn.gModule({image, text}, {d_out, q_out})
   netD:apply(weights_init)
 else
   netD = torch.load(opt.init_d)
@@ -264,16 +244,11 @@ else
   netR:add(nn.Mean(1))
 end
 
-local bce_criterion = nn.BCECriterion()
+local criterion = nn.BCECriterion()
 local weights = torch.zeros(opt.batchSize * 3/2)
 weights:narrow(1,1,opt.batchSize):fill(1)
 weights:narrow(1,opt.batchSize+1,opt.batchSize/2):fill(opt.interp_weight)
-local bce_criterion_interp = nn.BCECriterion(weights)
-
-local mutinfo_criterion = dists.MutualInformationCriteria(dists.Gaussian(opt.cont_codes))
-local criterion = nn.ParallelCriterion():add(bce_criterion):add(mutinfo_criterion)
-local criterion_interp = nn.ParallelCriterion():add(bce_criterion_interp):add(mutinfo_criterion)
-
+local criterion_interp = nn.BCECriterion(weights)
 ---------------------------------------------------------------------------
 optimStateG = {
    learningRate = opt.lr,
@@ -317,15 +292,13 @@ if opt.gpu > 0 then
    netD:cuda()
    netG:cuda()
    netR:cuda()
-   bce_criterion:cuda()
-   bce_criterion_interp:cuda()
    criterion:cuda()
    criterion_interp:cuda()
 end
 
 if opt.use_cudnn == 1 then
   cudnn = require('cudnn')
-  --netD = cudnn.convert(netD, cudnn)  -- cudnn does not work with nngraph
+  netD = cudnn.convert(netD, cudnn)
   netG = cudnn.convert(netG, cudnn)
   netR = cudnn.convert(netR, cudnn)
 end
@@ -379,8 +352,8 @@ local fDx = function(x)
   label:fill(real_label)
 
   local output = netD:forward{input_img, input_txt}
-  local errD_real = bce_criterion:forward(output[1], label)
-  local df_do = bce_criterion:backward(output[1], label)
+  local errD_real = criterion:forward(output, label)
+  local df_do = criterion:backward(output, label)
   netD:backward({input_img, input_txt}, df_do)
 
   errD_wrong = 0
@@ -390,8 +363,8 @@ local fDx = function(x)
     label:fill(fake_label)
 
     local output = netD:forward{input_img, input_txt}
-    errD_wrong = opt.cls_weight*bce_criterion:forward(output[1], label)
-    local df_do = bce_criterion:backward(output[1], label)
+    errD_wrong = opt.cls_weight*criterion:forward(output, label)
+    local df_do = criterion:backward(output, label)
     df_do:mul(opt.cls_weight)
     netD:backward({input_img, input_txt}, df_do)
   end
@@ -408,8 +381,8 @@ local fDx = function(x)
   label:fill(fake_label)
 
   local output = netD:forward{input_img, input_txt}
-  local errD_fake = criterion:forward(output, {label, noise[{{}, {1, opt.cont_codes}, {}, {}}]})
-  local df_do = criterion:backward(output, {label, noise[{{}, {1, opt.cont_codes}, {}, {}}]})
+  local errD_fake = criterion:forward(output, label)
+  local df_do = criterion:backward(output, label)
   local fake_weight = 1 - opt.cls_weight
   errD_fake = errD_fake*fake_weight
   df_do:mul(fake_weight)
@@ -440,8 +413,8 @@ local fGx = function(x)
   label_interp:fill(real_label) -- fake labels are real for generator cost
 
   local output = netD:forward{input_img_interp, input_txt_interp}
-  errG = criterion_interp:forward(output, {label_interp, noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]})
-  local df_do = criterion_interp:backward(output, {label_interp, noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]})
+  errG = criterion_interp:forward(output, label_interp)
+  local df_do = criterion_interp:backward(output, label_interp)
   local df_dg = netD:updateGradInput({input_img_interp, input_txt_interp}, df_do)
 
   netG:backward({noise_interp, input_txt_interp}, df_dg[1])
