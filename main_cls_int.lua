@@ -212,7 +212,7 @@ if opt.init_d == '' then
   fcD:add(nn.Replicate(4,4)) 
   netD = nn.Sequential()
   pt = nn.ParallelTable()
-  pt:add(convD)
+  pt:add(nn.Identity())
   pt:add(fcD)
   netD:add(pt)
   netD:add(nn.JoinTable(2))
@@ -225,8 +225,16 @@ if opt.init_d == '' then
   netD:add(nn.View(1):setNumInputDims(3))
   -- state size: 1
   netD:apply(weights_init)
+
+  netQ = nn.Sequential()
+  -- state size: (ndf*8 + 128) x 4 x 4
+  netQ:add(SpatialConvolution(ndf * 8, ndf * 8, 1, 1))
+  netQ:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
+  netQ:add(nn.View(ndf * 8 * 4 * 4))
+  netQ:add(nn.Linear(ndf * 8 * 4 * 4, opt.cont_codes * 2))
+
 else
-  netD = torch.load(opt.init_d)
+  convD, netD, netQ = torch.load(opt.init_d)
 end
 
 assert(math.floor(opt.batchSize / opt.numCaption) * opt.numCaption == opt.batchSize)
@@ -289,7 +297,9 @@ if opt.gpu > 0 then
    noise_interp = noise_interp:cuda()
    label = label:cuda()
    label_interp = label_interp:cuda()
+   convD:cuda()
    netD:cuda()
+   netQ:cuda()
    netG:cuda()
    netR:cuda()
    criterion:cuda()
@@ -298,19 +308,25 @@ end
 
 if opt.use_cudnn == 1 then
   cudnn = require('cudnn')
+  convD = cudnn.convert(convD, cudnn)
   netD = cudnn.convert(netD, cudnn)
+  netQ = cudnn.convert(netQ, cudnn)
   netG = cudnn.convert(netG, cudnn)
   netR = cudnn.convert(netR, cudnn)
 end
 
+local parametersConvD, gradParametersConvD = convD:getParameters()
 local parametersD, gradParametersD = netD:getParameters()
+local parametersQ, gradParametersQ = netQ:getParameters()
 local parametersG, gradParametersG = netG:getParameters()
 
 if opt.display then disp = require 'display' end
 
 -- create closure to evaluate f(X) and df/dX of discriminator
 local fDx = function(x)
+  convD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
   netD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+  netQ:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
   netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
 
   gradParametersD:zero()
@@ -351,10 +367,12 @@ local fDx = function(x)
   end
   label:fill(real_label)
 
-  local output = netD:forward{input_img, input_txt}
+  local output_conv = convD:forward(input_img)
+  local output = netD:forward{output_conv, input_txt}
   local errD_real = criterion:forward(output, label)
   local df_do = criterion:backward(output, label)
-  netD:backward({input_img, input_txt}, df_do)
+  local df_dd = netD:backward({output_conv, input_txt}, df_do)
+  convD:backward(input_img, df_dd[1])
 
   errD_wrong = 0
   if opt.cls_weight > 0 then
@@ -362,11 +380,13 @@ local fDx = function(x)
     input_img:copy(wrong_img)
     label:fill(fake_label)
 
-    local output = netD:forward{input_img, input_txt}
+    local output_conv = convD:forward(input_img)
+    local output = netD:forward{output_conv, input_txt}
     errD_wrong = opt.cls_weight*criterion:forward(output, label)
     local df_do = criterion:backward(output, label)
     df_do:mul(opt.cls_weight)
-    netD:backward({input_img, input_txt}, df_do)
+    local df_dd = netD:backward({output_conv, input_txt}, df_do)
+    convD:backward(input_img, df_dd[1])
   end
 
   -- train with fake
@@ -380,13 +400,15 @@ local fDx = function(x)
   input_img:copy(fake)
   label:fill(fake_label)
 
-  local output = netD:forward{input_img, input_txt}
+  local output_conv = convD:forward(input_img)
+  local output = netD:forward{output_conv, input_txt}
   local errD_fake = criterion:forward(output, label)
   local df_do = criterion:backward(output, label)
   local fake_weight = 1 - opt.cls_weight
   errD_fake = errD_fake*fake_weight
   df_do:mul(fake_weight)
-  netD:backward({input_img, input_txt}, df_do)
+  local df_dd = netD:backward({output_conv, input_txt}, df_do)
+  convD:backward(input_img, df_dd[1])
 
   errD = errD_real + errD_fake + errD_wrong
   errW = errD_wrong
@@ -396,7 +418,9 @@ end
 
 -- create closure to evaluate f(X) and df/dX of generator
 local fGx = function(x)
+  convD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
   netD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+  netQ:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
   netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
 
   gradParametersG:zero()
@@ -412,12 +436,14 @@ local fGx = function(x)
   input_img_interp:copy(fake)
   label_interp:fill(real_label) -- fake labels are real for generator cost
 
-  local output = netD:forward{input_img_interp, input_txt_interp}
+  local output_conv = convD:forward(input_img_interp)
+  local output = netD:forward{output_conv, input_txt_interp}
   errG = criterion_interp:forward(output, label_interp)
   local df_do = criterion_interp:backward(output, label_interp)
-  local df_dg = netD:updateGradInput({input_img_interp, input_txt_interp}, df_do)
+  local df_dg = netD:updateGradInput({output_conv, input_txt_interp}, df_do)
+  local df_dg = convD:updateGradInput(input_img_interp, df_dg[1])
 
-  netG:backward({noise_interp, input_txt_interp}, df_dg[1])
+  netG:backward({noise_interp, input_txt_interp}, df_dg)
   return errG, gradParametersG
 end
 
@@ -462,7 +488,7 @@ for epoch = 1, opt.niter do
   if epoch % opt.save_every == 0 then
     paths.mkdir(opt.checkpoint_dir)
     torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_G.t7', netG)
-    torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_D.t7', netD)
+    torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_D.t7', {convD, netD, netQ})
     torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_opt.t7', opt)
     print(('End of epoch %d / %d \t Time Taken: %.3f'):format(
            epoch, opt.niter, epoch_tm:time().real))
