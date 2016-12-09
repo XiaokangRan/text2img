@@ -9,7 +9,7 @@ require 'nngraph'
 require 'optim'
 require 'image'
 
-dists = require 'pdists'
+dists = require 'pdist'
 
 opt = {
    numCaption = 4,
@@ -53,6 +53,7 @@ opt = {
    noise = 'normal',       -- uniform / normal
    cont_codes = 5,         -- number of continuous latent codes
    cont_range = 1.0,       -- uniform between [-cont_range, cont_range]
+   mi_weight = 1.0,
    init_g = '',
    init_d = '',
    use_cudnn = 0,
@@ -269,7 +270,7 @@ if opt.gpu > 0 then
     gaussian_std = gaussian_std:cuda()
 end
 
-local gaussian_dist = dist.Gaussian(opt.cont_codes,gaussian_mean,gaussian_std)
+local gaussian_dist = dists.Gaussian(opt.cont_codes,gaussian_mean,gaussian_std)
 local mi_criterion = dists.MutualInformationCriterion(gaussian_dist)
 ---------------------------------------------------------------------------
 optimStateG = {
@@ -337,12 +338,8 @@ ct:add(netD)
 ct:add(netQ)
 dummyD:add(ct)
 
-local dummyG = nn.ParallelTable()
-dummyG:add(netG)
-dummyG:add(netQ)
-
 local parametersD, gradParametersD = dummyD:getParameters()
-local parametersG, gradParametersG = dummyG:getParameters()
+local parametersG, gradParametersG = netG:getParameters()
 
 if opt.display then disp = require 'display' end
 
@@ -424,12 +421,16 @@ local fDx = function(x)
   label:fill(fake_label)
 
   local output_conv = convD:forward(input_img)
+
+  local output_q = netQ:forward(output_conv)
+  errQ = mi_criterion:forward(output_q, latent_codes)
+  local dq_do = mi_criterion:backward(output_q, latent_codes)
+  errQ = errQ * opt.mi_weight
+  dq_do:mul(opt.mi_weight)
+  local dq_dd = netQ:backward(output_conv, dq_do)
+  convD:backward(input_img, dq_dd)
+
   local output = netD:forward{output_conv, input_txt}
-  --local output_q = netQ:forward(output_conv)
-  --local errQ = mi_criterion:forward(output_q, latent_codes)
-  --local dq_do = mi_criterion:backward(output_q, latent_codes)
-  --local dq_dd = netQ:backward(output_conv, dq_do)
-  --convD:backward(input_img,dq_dd)
   local errD_fake = criterion:forward(output, label)
   local df_do = criterion:backward(output, label)
   local fake_weight = 1 - opt.cls_weight
@@ -438,7 +439,7 @@ local fDx = function(x)
   local df_dd = netD:backward({output_conv, input_txt}, df_do)
   convD:backward(input_img, df_dd[1])
 
-  errD = errD_real + errD_fake + errD_wrong-- + errQ
+  errD = errD_real + errD_fake + errD_wrong
   errW = errD_wrong
 
   return errD, gradParametersD
@@ -457,17 +458,29 @@ local fGx = function(x)
     noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
   end
   noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
+  local latent_codes = noise_interp[{{}, {1, opt.cont_codes}, 1, 1}]
 
   local fake = netG:forward{noise_interp, input_txt_interp}
   input_img_interp:copy(fake)
   label_interp:fill(real_label) -- fake labels are real for generator cost
 
   local output_conv = convD:forward(input_img_interp)
+
+  local output_q = netQ:forward(output_conv)
+  errQ = mi_criterion:forward(output_q, latent_codes)
+  local dq_do = mi_criterion:backward(output_q, latent_codes)
+  errQ = errQ * opt.mi_weight
+  dq_do:mul(opt.mi_weight)
+  local dq_dg = netQ:updateGradInput(output_conv, dq_do)
+  dq_dg = convD:updateGradInput(input_img_interp, dq_dg)
+
+  netG:backward({noise_interp, input_txt_interp}, dq_dg)
+
   local output = netD:forward{output_conv, input_txt_interp}
   errG = criterion_interp:forward(output, label_interp)
   local df_do = criterion_interp:backward(output, label_interp)
   local df_dg = netD:updateGradInput({output_conv, input_txt_interp}, df_do)
-  local df_dg = convD:updateGradInput(input_img_interp, df_dg[1])
+  df_dg = convD:updateGradInput(input_img_interp, df_dg[1])
 
   netG:backward({noise_interp, input_txt_interp}, df_dg)
   return errG, gradParametersG
@@ -493,13 +506,13 @@ for epoch = 1, opt.niter do
     -- logging
     if ((i-1) / opt.batchSize) % opt.print_every == 0 then
       print(('[%d][%d/%d] T:%.3f  DT:%.3f lr: %.4g '
-                .. '  Err_G: %.4f  Err_D: %.4f Err_W: %.4f'):format(
+                .. '  Err_G: %.4f Err_D: %.4f Err_W: %.4f Err_Q: %.4f'):format(
               epoch, ((i-1) / opt.batchSize),
               math.floor(math.min(data:size(), opt.ntrain) / opt.batchSize),
               tm:time().real, data_tm:time().real,
               optimStateG.learningRate,
               errG and errG or -1, errD and errD or -1,
-              errW and errW or -1))
+              errW and errW or -1, errQ and errQ or -1))
       local fake = netG.output
       if opt.display then
         disp.image(fake:narrow(1,1,opt.batchSize), {win=opt.display_id, title=opt.name})
