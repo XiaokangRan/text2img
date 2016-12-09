@@ -9,7 +9,7 @@ require 'nngraph'
 require 'optim'
 require 'image'
 
-dists = require 'dists'
+dists = require 'pdists'
 
 opt = {
    numCaption = 4,
@@ -234,6 +234,7 @@ if opt.init_d == '' then
   netQ:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
   netQ:add(nn.View(ndf * 8 * 4 * 4))
   netQ:add(nn.Linear(ndf * 8 * 4 * 4, opt.cont_codes * 2))
+  netQ:apply(weights_init)
 
 else
   convD, netD, netQ = torch.load(opt.init_d)
@@ -260,7 +261,16 @@ weights:narrow(1,1,opt.batchSize):fill(1)
 weights:narrow(1,opt.batchSize+1,opt.batchSize/2):fill(opt.interp_weight)
 local criterion_interp = nn.BCECriterion(weights)
 
-local mi_criterion = dists.MutualInformationCriteria(dists.Gaussian(opt.cont_codes))
+local gaussian_mean = torch.zeros(opt.cont_codes)
+local gaussian_std = torch.ones(opt.cont_codes)
+
+if opt.gpu > 0 then
+    gaussian_mean = gaussian_mean:cuda()
+    gaussian_std = gaussian_std:cuda()
+end
+
+local gaussian_dist = dist.Gaussian(opt.cont_codes,gaussian_mean,gaussian_std)
+local mi_criterion = dists.MutualInformationCriterion(gaussian_dist)
 ---------------------------------------------------------------------------
 optimStateG = {
    learningRate = opt.lr,
@@ -308,6 +318,7 @@ if opt.gpu > 0 then
    netR:cuda()
    criterion:cuda()
    criterion_interp:cuda()
+   mi_criterion:cuda()
 end
 
 if opt.use_cudnn == 1 then
@@ -418,6 +429,7 @@ local fDx = function(x)
   --local errQ = mi_criterion:forward(output_q, latent_codes)
   --local dq_do = mi_criterion:backward(output_q, latent_codes)
   --local dq_dd = netQ:backward(output_conv, dq_do)
+  --convD:backward(input_img,dq_dd)
   local errD_fake = criterion:forward(output, label)
   local df_do = criterion:backward(output, label)
   local fake_weight = 1 - opt.cls_weight
@@ -426,7 +438,7 @@ local fDx = function(x)
   local df_dd = netD:backward({output_conv, input_txt}, df_do)
   convD:backward(input_img, df_dd[1])
 
-  errD = errD_real + errD_fake + errD_wrong
+  errD = errD_real + errD_fake + errD_wrong-- + errQ
   errW = errD_wrong
 
   return errD, gradParametersD
