@@ -9,6 +9,8 @@ require 'nngraph'
 require 'optim'
 require 'image'
 
+dists = require 'dists'
+
 opt = {
    numCaption = 4,
    replicate = 1, -- if 1, then replicate averaged text features numCaption times.
@@ -257,6 +259,8 @@ local weights = torch.zeros(opt.batchSize * 3/2)
 weights:narrow(1,1,opt.batchSize):fill(1)
 weights:narrow(1,opt.batchSize+1,opt.batchSize/2):fill(opt.interp_weight)
 local criterion_interp = nn.BCECriterion(weights)
+
+local mi_criterion = dists.MutualInformationCriteria(dists.Gaussian(opt.cont_codes))
 ---------------------------------------------------------------------------
 optimStateG = {
    learningRate = opt.lr,
@@ -315,18 +319,25 @@ if opt.use_cudnn == 1 then
   netR = cudnn.convert(netR, cudnn)
 end
 
-local parametersConvD, gradParametersConvD = convD:getParameters()
-local parametersD, gradParametersD = netD:getParameters()
-local parametersQ, gradParametersQ = netQ:getParameters()
-local parametersG, gradParametersG = netG:getParameters()
+local dummyD = nn.Sequential()
+dummyD:add(convD)
+local ct = nn.ConcatTable()
+ct:add(netD)
+ct:add(netQ)
+dummyD:add(ct)
+
+local dummyG = nn.ParallelTable()
+dummyG:add(netG)
+dummyG:add(netQ)
+
+local parametersD, gradParametersD = dummyD:getParameters()
+local parametersG, gradParametersG = dummyG:getParameters()
 
 if opt.display then disp = require 'display' end
 
 -- create closure to evaluate f(X) and df/dX of discriminator
 local fDx = function(x)
-  convD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
-  netD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
-  netQ:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+  dummyD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
   netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
 
   gradParametersD:zero()
@@ -396,12 +407,17 @@ local fDx = function(x)
     noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
   end
   noise[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
+  local latent_codes = noise[{{}, {1, opt.cont_codes}, 1, 1}]
   local fake = netG:forward{noise, input_txt}
   input_img:copy(fake)
   label:fill(fake_label)
 
   local output_conv = convD:forward(input_img)
   local output = netD:forward{output_conv, input_txt}
+  --local output_q = netQ:forward(output_conv)
+  --local errQ = mi_criterion:forward(output_q, latent_codes)
+  --local dq_do = mi_criterion:backward(output_q, latent_codes)
+  --local dq_dd = netQ:backward(output_conv, dq_do)
   local errD_fake = criterion:forward(output, label)
   local df_do = criterion:backward(output, label)
   local fake_weight = 1 - opt.cls_weight
@@ -418,9 +434,7 @@ end
 
 -- create closure to evaluate f(X) and df/dX of generator
 local fGx = function(x)
-  convD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
-  netD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
-  netQ:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+  dummyD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
   netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
 
   gradParametersG:zero()
