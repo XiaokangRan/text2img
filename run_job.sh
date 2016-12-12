@@ -8,7 +8,7 @@ cd /home/sv1358/text2img
 
 if [ "$dataset" == "cub" ]
 then
-    ./scripts/train_cub.sh
+    ./scripts/train_cub.sh $mi_wt $img_dir $cp_dir
 elif [ "$dataset" == "flowers" ]
 then
     ./scripts/train_flowers.sh
