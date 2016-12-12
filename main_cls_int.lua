@@ -54,6 +54,7 @@ opt = {
    cont_codes = 5,         -- number of continuous latent codes
    cont_range = 1.0,       -- uniform between [-cont_range, cont_range]
    mi_weight = 1.0,
+   mi_usetext = false,
    init_g = '',
    init_d = '',
    use_cudnn = 0,
@@ -215,10 +216,20 @@ if opt.init_d == '' then
   fcD:add(nn.Replicate(4,4)) 
   netD = nn.Sequential()
   pt = nn.ParallelTable()
-  pt:add(nn.Identity())
+  if mi_usetext then
+    pt:add(convD)
+  else
+    pt:add(nn.Identity())
+  end
   pt:add(fcD)
-  netD:add(pt)
-  netD:add(nn.JoinTable(2))
+  local pst = nn.Sequential()
+  pst:add(pt)
+  pst:add(nn.JoinTable(2))
+  if mi_usetext then
+    convD = pst
+  else
+    netD:add(pst)
+  end
   -- state size: (ndf*8 + 128) x 4 x 4
   netD:add(SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1))
   netD:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
@@ -231,7 +242,13 @@ if opt.init_d == '' then
 
   netQ = nn.Sequential()
   -- state size: (ndf*8 + 128) x 4 x 4
-  netQ:add(SpatialConvolution(ndf * 8, ndf * 8, 1, 1))
+  local netQ_l1
+  if mi_usetext then
+    netQ_li = SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1)
+  else
+    netQ_l1 = SpatialConvolution(ndf * 8, ndf * 8, 1, 1)
+  end
+  netQ:add(netQ_l1)
   netQ:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
   netQ:add(nn.View(ndf * 8 * 4 * 4))
   netQ:add(nn.Linear(ndf * 8 * 4 * 4, opt.cont_codes * 2))
@@ -386,12 +403,30 @@ local fDx = function(x)
   end
   label:fill(real_label)
 
-  local output_conv = convD:forward(input_img)
-  local output = netD:forward{output_conv, input_txt}
+  local convD_input
+  local netD_input
+  local convD_gradOutput
+  if mi_usetext then
+    convD_input = {input_img,input_txt}
+  else
+    convD_input = input_img
+  end
+  local output_conv = convD:forward(convD_input)
+  if mi_usetext then
+    netD_input = output_conv
+  else
+    netD_input = {output_conv, input_txt}
+  end
+  local output = netD:forward(netD_input)
   local errD_real = criterion:forward(output, label)
   local df_do = criterion:backward(output, label)
-  local df_dd = netD:backward({output_conv, input_txt}, df_do)
-  convD:backward(input_img, df_dd[1])
+  local df_dd = netD:backward(netD_input, df_do)
+  if mi_usetext then
+    convD_gradOutput = df_dd
+  else
+    convD_gradOutput = df_dd[1]
+  end
+  convD:backward(convD_input, convD_gradOutput)
 
   errD_wrong = 0
   if opt.cls_weight > 0 then
@@ -399,13 +434,23 @@ local fDx = function(x)
     input_img:copy(wrong_img)
     label:fill(fake_label)
 
-    local output_conv = convD:forward(input_img)
-    local output = netD:forward{output_conv, input_txt}
+    local output_conv = convD:forward(convD_input)
+    if mi_usetext then
+      netD_input = output_conv
+    else
+      netD_input = {output_conv, input_txt}
+    end
+    local output = netD:forward(netD_input)
     errD_wrong = opt.cls_weight*criterion:forward(output, label)
     local df_do = criterion:backward(output, label)
     df_do:mul(opt.cls_weight)
-    local df_dd = netD:backward({output_conv, input_txt}, df_do)
-    convD:backward(input_img, df_dd[1])
+    local df_dd = netD:backward(netD_input, df_do)
+    if mi_usetext then
+      convD_gradOutput = df_dd
+    else
+      convD_gradOutput = df_dd[1]
+    end
+    convD:backward(convD_input, convD_gradOutput)
   end
 
   -- train with fake
@@ -420,7 +465,7 @@ local fDx = function(x)
   input_img:copy(fake)
   label:fill(fake_label)
 
-  local output_conv = convD:forward(input_img)
+  local output_conv = convD:forward(convD_input)
 
   local output_q = netQ:forward(output_conv)
   errQ = mi_criterion:forward(output_q, latent_codes)
@@ -428,16 +473,27 @@ local fDx = function(x)
   errQ = errQ * opt.mi_weight
   dq_do:mul(opt.mi_weight)
   local dq_dd = netQ:backward(output_conv, dq_do)
-  convD:backward(input_img, dq_dd)
+  -- This will train the text reduction layer as well.. Confirm
+  convD:backward(convD_input, dq_dd)
 
-  local output = netD:forward{output_conv, input_txt}
+  if mi_usetext then
+    netD_input = output_conv
+  else
+    netD_input = {output_conv, input_txt}
+  end
+  local output = netD:forward(netD_input)
   local errD_fake = criterion:forward(output, label)
   local df_do = criterion:backward(output, label)
   local fake_weight = 1 - opt.cls_weight
   errD_fake = errD_fake*fake_weight
   df_do:mul(fake_weight)
-  local df_dd = netD:backward({output_conv, input_txt}, df_do)
-  convD:backward(input_img, df_dd[1])
+  local df_dd = netD:backward(netD_input, df_do)
+  if mi_usetext then
+    convD_gradOutput = df_dd
+  else
+    convD_gradOutput = df_dd[1]
+  end
+  convD:backward(convD_input, convD_gradOutput)
 
   errD = errD_real + errD_fake + errD_wrong
   errW = errD_wrong
@@ -464,7 +520,21 @@ local fGx = function(x)
   input_img_interp:copy(fake)
   label_interp:fill(real_label) -- fake labels are real for generator cost
 
-  local output_conv = convD:forward(input_img_interp)
+  local convD_input
+  local netD_input
+  local convD_gradOutput
+  local netG_gradOutput
+  if mi_usetext then
+    convD_input = {input_img_interp,input_txt_interp}
+  else
+    convD_input = input_img_interp
+  end
+  local output_conv = convD:forward(convD_input)
+  if mi_usetext then
+    netD_input = output_conv
+  else
+    netD_input = {output_conv, input_txt_interp}
+  end
 
   local output_q = netQ:forward(output_conv)
   errQ = mi_criterion:forward(output_q, latent_codes)
@@ -472,17 +542,32 @@ local fGx = function(x)
   errQ = errQ * opt.mi_weight
   dq_do:mul(opt.mi_weight)
   local dq_dg = netQ:updateGradInput(output_conv, dq_do)
-  dq_dg = convD:updateGradInput(input_img_interp, dq_dg)
+  dq_dg = convD:updateGradInput(convD_input, dq_dg)
 
-  netG:backward({noise_interp, input_txt_interp}, dq_dg)
+  if mi_usetext then
+    netG_gradOutput = dq_dg[1]
+  else
+    netG_gradOutput = dq_dg
+  end
+  netG:backward({noise_interp, input_txt_interp}, netG_gradOutput)
 
-  local output = netD:forward{output_conv, input_txt_interp}
+  local output = netD:forward(netD_input)
   errG = criterion_interp:forward(output, label_interp)
   local df_do = criterion_interp:backward(output, label_interp)
-  local df_dg = netD:updateGradInput({output_conv, input_txt_interp}, df_do)
-  df_dg = convD:updateGradInput(input_img_interp, df_dg[1])
+  local df_dg = netD:updateGradInput(netD_input, df_do)
+  if mi_usetext then
+    convD_gradOutput = df_dg
+  else
+    convD_gradOutput = df_dg[1]
+  end
+  df_dg = convD:updateGradInput(convD_input, convD_gradOutput)
 
-  netG:backward({noise_interp, input_txt_interp}, df_dg)
+  if mi_usetext then
+    netG_gradOutput = df_dg[1]
+  else
+    netG_gradOutput = df_dg
+  end
+  netG:backward({noise_interp, input_txt_interp}, netG_gradOutput)
   return errG, gradParametersG
 end
 
