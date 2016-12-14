@@ -33,6 +33,9 @@ opt = {
   checkpoint_dir = '',
   net_gen = '',
   net_txt = '',
+  cont_codes = 5,         -- number of continuous latent codes
+  cont_range = 2.0,       -- vary uniformly between [-cont_range, cont_range]
+  cont_samples = 10,      -- number of images between [-cont_range, cont_range] to generate
 }
 
 for k,v in pairs(opt) do opt[k] = tonumber(os.getenv(k)) or os.getenv(k) or opt[k] end
@@ -76,28 +79,37 @@ end
 
 local html = '<html><body><h1>Generated Images</h1><table border="1px solid gray" style="width=100%"><tr><td><b>Caption</b></td><td><b>Image</b></td></tr>'
 
+local cont_range = torch.linspace(-opt.cont_range, opt.cont_range, opt.cont_samples)
+
 for i = 1,#fea_txt do
-  print(string.format('generating %d of %d', i, #fea_txt))
-  local cur_fea_txt = torch.repeatTensor(fea_txt[i], opt.batchSize, 1)
-  local cur_raw_txt = raw_txt[i]
   if opt.noisetype == 'uniform' then
-    noise:uniform(-1, 1)
+    noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
   elseif opt.noisetype == 'normal' then
-    noise:normal(0, 1)
+    noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
   end
-  local images = net_gen:forward{noise, cur_fea_txt:cuda()}
-  local visdir = string.format('results/%s', opt.dataset)
-  lfs.mkdir('results')
-  lfs.mkdir(visdir)
-  local fname = string.format('%s/img_%d', visdir, i)
-  local fname_png = fname .. '.png'
-  local fname_txt = fname .. '.txt'
-  images:add(1):mul(0.5)
-  --image.save(fname_png, image.toDisplayTensor(images,4,torch.floor(opt.batchSize/4)))
-  image.save(fname_png, image.toDisplayTensor(images,4,opt.batchSize/2))
-  html = html .. string.format('\n<tr><td>%s</td><td><img src="%s"></td></tr>',
-                               cur_raw_txt, fname_png)
-  os.execute(string.format('echo "%s" > %s', cur_raw_txt, fname_txt))
+  for j = 1,opt.cont_codes do
+    for idx = 1,opt.cont_samples do
+      k = cont_range[idx]
+      print(string.format('generating %d of %d, code %d, value %f', i, #fea_txt, j, k))
+      local cur_fea_txt = torch.repeatTensor(fea_txt[i], opt.batchSize, 1)
+      local cur_raw_txt = raw_txt[i]
+      noise[{{}, {1, opt.cont_codes}, {}, {}}]:zero()
+      noise[{{}, j, {}, {}}]:fill(k)
+
+      local images = net_gen:forward{noise, cur_fea_txt:cuda()}
+      local visdir = string.format('results/%s', opt.dataset)
+      lfs.mkdir('results')
+      lfs.mkdir(visdir)
+      local fname_png = string.format('%s/img_%d_%d_%d.png', visdir, i, j, idx)
+      local fname_txt = string.format('%s/img_%d.txt', visdir, i)
+      images:add(1):mul(0.5)
+      --image.save(fname_png, image.toDisplayTensor(images,4,torch.floor(opt.batchSize/4)))
+      image.save(fname_png, image.toDisplayTensor(images,4,opt.batchSize/2))
+      html = html .. string.format('\n<tr><td>%s</td><td><img src="%s"></td></tr>',
+                                   cur_raw_txt, fname_png)
+      os.execute(string.format('echo "%s" > %s', cur_raw_txt, fname_txt))
+    end
+  end
 end
 
 html = html .. '</html>'
