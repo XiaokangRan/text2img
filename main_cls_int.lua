@@ -74,6 +74,9 @@ end
 opt.manualSeed = torch.random(1, 10000) -- fix seed
 print("Random Seed: " .. opt.manualSeed)
 torch.manualSeed(opt.manualSeed)
+if opt.gpu > 0 then
+   cutorch.manualSeedAll(opt.manualSeed)
+end
 torch.setnumthreads(1)
 torch.setdefaulttensortype('torch.FloatTensor')
 
