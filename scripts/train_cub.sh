@@ -25,8 +25,14 @@ then
 fi
 
 echo $MI_WT
-echo $CUB_IMG_DIR
+echo $CUB_IMG_OUT_DIR
 echo $CHECKPOINT_DIR
+echo $use_text
+
+if $use_text
+then 
+    export mi_usetext=true
+fi
 
 display_id=10${ID} \
 gpu=${ID} \
@@ -50,10 +56,10 @@ checkpoint_dir=${CHECKPOINT_DIR} \
 out_image_dir=${CUB_IMG_OUT_DIR} \
 numCaption=${NC} \
 print_every=4 \
-save_every=1 \
+save_every=20 \
 replicate=0 \
 use_cudnn=1 \
 ngf=${NGF} \
 ndf=${NDF} \
-th main_cls_int.lua
+th main_cls_int.lua 
 

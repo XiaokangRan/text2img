@@ -603,13 +603,14 @@ for epoch = 1, opt.niter do
         disp.image(fake:narrow(1,1,opt.batchSize), {win=opt.display_id, title=opt.name})
         disp.image(real_img, {win=opt.display_id * 3, title=opt.name})
       end
-      fake_out = image.toDisplayTensor(fake:narrow(1,1,opt.batchSize))
-      image.save(opt.out_image_dir .. '/' .. 'fake_' .. epoch .. '_' .. i .. '.png', fake_out)
-      real_out = image.toDisplayTensor(real_img)
-      image.save(opt.out_image_dir .. '/' .. 'real_' .. epoch .. '_' .. i .. '.png', real_out)
     end
   end
   if epoch % opt.save_every == 0 then
+    local fake = netG.output
+    fake_out = image.toDisplayTensor(fake:narrow(1,1,opt.batchSize))
+    image.save(opt.out_image_dir .. '/' .. 'fake_' .. epoch .. '.png', fake_out)
+    real_out = image.toDisplayTensor(real_img)
+    image.save(opt.out_image_dir .. '/' .. 'real_' .. epoch .. '.png', real_out)
     paths.mkdir(opt.checkpoint_dir)
     torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_G.t7', netG)
     torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_D.t7', {convD, netD, netQ})
