@@ -51,7 +51,7 @@ if net_txt.protos ~=nil then net_txt = net_txt.protos.enc_doc end
 net_gen:evaluate()
 net_txt:evaluate()
 
-if opt.web == false then
+if not opt.web then
     -- Extract all text features.
     fea_txt = {}
     -- Decode text for sanity check.
@@ -80,7 +80,7 @@ if opt.gpu > 0 then
   noise = noise:cuda()
 end
 
-if opt.web ~= true then
+if not opt.web then
     local html = '<html><body><h1>Generated Images</h1><table border="1px solid gray" style="width=100%"><tr><td><b>Caption</b></td><td><b>Image</b></td></tr>'
 
     local cont_range = torch.linspace(-opt.cont_range, opt.cont_range, opt.cont_samples)
