@@ -37,6 +37,7 @@ opt = {
   cont_range = 2.0,       -- vary uniformly between [-cont_range, cont_range]
   cont_samples = 10,      -- number of images between [-cont_range, cont_range] to generate (if not web)
   web = false,            -- use web frontend
+  port = '8081'           -- which port to use
 }
 
 for k,v in pairs(opt) do opt[k] = tonumber(os.getenv(k)) or os.getenv(k) or opt[k] end
@@ -206,5 +207,5 @@ if opt.web then
         res.send('true')
     end)
 
-    app.listen()
+    app.listen({port=opt.port})
 end
