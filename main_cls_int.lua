@@ -12,52 +12,52 @@ require 'image'
 dists = require 'pdist'
 
 opt = {
-   numCaption = 4,
-   replicate = 1, -- if 1, then replicate averaged text features numCaption times.
-   save_every = 100,
-   print_every = 1,
-   dataset = 'cub_fast',       -- imagenet / lsun / folder
-   no_aug = 0,
-   img_dir = '',
-   keep_img_frac = 1.0,
-   interp_weight = 0,
-   interp_type = 1,
-   cls_weight = 0,
-   filenames = '',
-   data_root = '/home/reedscot/data/cub_files6',
-   classnames = '/home/reedscot/data/cub/allclasses.txt',
-   trainids = '/home/reedscot/data/cub/allids.txt',
-   checkpoint_dir = '/home/reedscot/checkpoints',
-   out_image_dir = '/scratch/sv1358/text2img_data/img_output/',
-   numshot = 0,
-   batchSize = 64,
-   doc_length = 201,
-   loadSize = 76,
-   txtSize = 1024,         -- #  of dim for raw text.
-   fineSize = 64,
-   nt = 128,               -- #  of dim for text features.
-   nz = 100,               -- #  of dim for Z
-   ngf = 128,              -- #  of gen filters in first conv layer
-   ndf = 64,               -- #  of discrim filters in first conv layer
-   nThreads = 4,           -- #  of data loading threads to use
-   niter = 1000,             -- #  of iter at starting learning rate
-   lr = 0.0002,            -- initial learning rate for adam
-   lr_decay = 0.5,            -- initial learning rate for adam
-   decay_every = 100,
-   beta1 = 0.5,            -- momentum term of adam
-   ntrain = math.huge,     -- #  of examples per epoch. math.huge for full dataset
-   display = 0,            -- display samples while training. 0 = false
-   display_id = 10,        -- display window id.
-   gpu = 2,                -- gpu = 0 is CPU mode. gpu=X is GPU mode on GPU X
-   name = 'experiment_long',
-   noise = 'normal',       -- uniform / normal
-   cont_codes = 5,         -- number of continuous latent codes
-   cont_range = 1.0,       -- uniform between [-cont_range, cont_range]
-   mi_weight = 1.0,
-   mi_usetext = false,
-   init_g = '',
-   init_d = '',
-   use_cudnn = 0,
+    numCaption = 4,
+    replicate = 1, -- if 1, then replicate averaged text features numCaption times.
+    save_every = 100,
+    print_every = 1,
+    dataset = 'cub_fast',       -- imagenet / lsun / folder
+    no_aug = 0,
+    img_dir = '',
+    keep_img_frac = 1.0,
+    interp_weight = 0,
+    interp_type = 1,
+    cls_weight = 0,
+    filenames = '',
+    data_root = '/home/reedscot/data/cub_files6',
+    classnames = '/home/reedscot/data/cub/allclasses.txt',
+    trainids = '/home/reedscot/data/cub/allids.txt',
+    checkpoint_dir = '/home/reedscot/checkpoints',
+    out_image_dir = '/scratch/sv1358/text2img_data/img_output/',
+    numshot = 0,
+    batchSize = 64,
+    doc_length = 201,
+    loadSize = 76,
+    txtSize = 1024,         -- #  of dim for raw text.
+    fineSize = 64,
+    nt = 128,               -- #  of dim for text features.
+    nz = 100,               -- #  of dim for Z
+    ngf = 128,              -- #  of gen filters in first conv layer
+    ndf = 64,               -- #  of discrim filters in first conv layer
+    nThreads = 4,           -- #  of data loading threads to use
+    niter = 1000,             -- #  of iter at starting learning rate
+    lr = 0.0002,            -- initial learning rate for adam
+    lr_decay = 0.5,            -- initial learning rate for adam
+    decay_every = 100,
+    beta1 = 0.5,            -- momentum term of adam
+    ntrain = math.huge,     -- #  of examples per epoch. math.huge for full dataset
+    display = 0,            -- display samples while training. 0 = false
+    display_id = 10,        -- display window id.
+    gpu = 2,                -- gpu = 0 is CPU mode. gpu=X is GPU mode on GPU X
+    name = 'experiment_long',
+    noise = 'normal',       -- uniform / normal
+    cont_codes = 5,         -- number of continuous latent codes
+    cont_range = 1.0,       -- uniform between [-cont_range, cont_range]
+    mi_weight = 1.0,
+    mi_usetext = false,
+    init_g = '',
+    init_d = '',
+    use_cudnn = 0,
 }
 
 -- one-line argument parser. parses enviroment variables to override the defaults
@@ -66,16 +66,16 @@ print(opt)
 if opt.display == 0 then opt.display = false end
 
 if opt.gpu > 0 then
-   ok, cunn = pcall(require, 'cunn')
-   ok2, cutorch = pcall(require, 'cutorch')
-   cutorch.setDevice(opt.gpu)
+    ok, cunn = pcall(require, 'cunn')
+    ok2, cutorch = pcall(require, 'cutorch')
+    cutorch.setDevice(opt.gpu)
 end
 
 opt.manualSeed = torch.random(1, 10000) -- fix seed
 print("Random Seed: " .. opt.manualSeed)
 torch.manualSeed(opt.manualSeed)
 if opt.gpu > 0 then
-   cutorch.manualSeedAll(opt.manualSeed)
+    cutorch.manualSeedAll(opt.manualSeed)
 end
 torch.setnumthreads(1)
 torch.setdefaulttensortype('torch.FloatTensor')
@@ -86,14 +86,14 @@ local data = DataLoader.new(opt.nThreads, opt.dataset, opt)
 print("Dataset: " .. opt.dataset, " Size: ", data:size())
 ----------------------------------------------------------------------------
 local function weights_init(m)
-   local name = torch.type(m)
-   if name:find('Convolution') then
-      m.weight:normal(0.0, 0.02)
-      m.bias:fill(0)
-   elseif name:find('BatchNormalization') then
-      if m.weight then m.weight:normal(1.0, 0.02) end
-      if m.bias then m.bias:fill(0) end
-   end
+    local name = torch.type(m)
+    if name:find('Convolution') then
+        m.weight:normal(0.0, 0.02)
+        m.bias:fill(0)
+    elseif name:find('BatchNormalization') then
+        if m.weight then m.weight:normal(1.0, 0.02) end
+        if m.bias then m.bias:fill(0) end
+    end
 end
 
 local nc = 3
@@ -108,19 +108,19 @@ local SpatialConvolution = nn.SpatialConvolution
 local SpatialFullConvolution = nn.SpatialFullConvolution
 
 if opt.init_g == '' then
-  fcG = nn.Sequential()
-  fcG:add(nn.Linear(opt.txtSize,opt.nt))
-  fcG:add(nn.LeakyReLU(0.2,true))
-  netG = nn.Sequential()
-  -- concat Z and txt
-  ptg = nn.ParallelTable()
-  ptg:add(nn.Identity())
-  ptg:add(fcG)
-  netG:add(ptg)
-  netG:add(nn.JoinTable(2))
-  -- input is Z, going into a convolution
-  netG:add(SpatialFullConvolution(nz + opt.nt, ngf * 8, 4, 4))
-  netG:add(SpatialBatchNormalization(ngf * 8))
+    fcG = nn.Sequential()
+    fcG:add(nn.Linear(opt.txtSize,opt.nt))
+    fcG:add(nn.LeakyReLU(0.2,true))
+    netG = nn.Sequential()
+    -- concat Z and txt
+    ptg = nn.ParallelTable()
+    ptg:add(nn.Identity())
+    ptg:add(fcG)
+    netG:add(ptg)
+    netG:add(nn.JoinTable(2))
+    -- input is Z, going into a convolution
+    netG:add(SpatialFullConvolution(nz + opt.nt, ngf * 8, 4, 4))
+    netG:add(SpatialBatchNormalization(ngf * 8))
 
     -- state size: (ngf*8) x 4 x 4
     local conc = nn.ConcatTable()
@@ -139,9 +139,9 @@ if opt.init_g == '' then
     netG:add(nn.CAddTable())
     netG:add(nn.ReLU(true))
 
-  -- state size: (ngf*8) x 4 x 4
-  netG:add(SpatialFullConvolution(ngf * 8, ngf * 4, 4, 4, 2, 2, 1, 1))
-  netG:add(SpatialBatchNormalization(ngf * 4))
+    -- state size: (ngf*8) x 4 x 4
+    netG:add(SpatialFullConvolution(ngf * 8, ngf * 4, 4, 4, 2, 2, 1, 1))
+    netG:add(SpatialBatchNormalization(ngf * 4))
 
     -- state size: (ngf*4) x 8 x 8
     local conc = nn.ConcatTable()
@@ -160,40 +160,40 @@ if opt.init_g == '' then
     netG:add(nn.CAddTable())
     netG:add(nn.ReLU(true))
 
-  -- state size: (ngf*4) x 8 x 8
-  netG:add(SpatialFullConvolution(ngf * 4, ngf * 2, 4, 4, 2, 2, 1, 1))
-  netG:add(SpatialBatchNormalization(ngf * 2)):add(nn.ReLU(true))
+    -- state size: (ngf*4) x 8 x 8
+    netG:add(SpatialFullConvolution(ngf * 4, ngf * 2, 4, 4, 2, 2, 1, 1))
+    netG:add(SpatialBatchNormalization(ngf * 2)):add(nn.ReLU(true))
 
-  -- state size: (ngf*2) x 16 x 16
-  netG:add(SpatialFullConvolution(ngf * 2, ngf, 4, 4, 2, 2, 1, 1))
-  netG:add(SpatialBatchNormalization(ngf)):add(nn.ReLU(true))
+    -- state size: (ngf*2) x 16 x 16
+    netG:add(SpatialFullConvolution(ngf * 2, ngf, 4, 4, 2, 2, 1, 1))
+    netG:add(SpatialBatchNormalization(ngf)):add(nn.ReLU(true))
 
-  -- state size: (ngf) x 32 x 32
-  netG:add(SpatialFullConvolution(ngf, nc, 4, 4, 2, 2, 1, 1))
-  netG:add(nn.Tanh())
+    -- state size: (ngf) x 32 x 32
+    netG:add(SpatialFullConvolution(ngf, nc, 4, 4, 2, 2, 1, 1))
+    netG:add(nn.Tanh())
 
-  -- state size: (nc) x 64 x 64
-  netG:apply(weights_init)
+    -- state size: (nc) x 64 x 64
+    netG:apply(weights_init)
 else
-  netG = torch.load(opt.init_g)
+    netG = torch.load(opt.init_g)
 end
 
 
 if opt.init_d == '' then
-  convD = nn.Sequential()
-  -- input is (nc) x 64 x 64
-  convD:add(SpatialConvolution(nc, ndf, 4, 4, 2, 2, 1, 1))
-  convD:add(nn.LeakyReLU(0.2, true))
-  -- state size: (ndf) x 32 x 32
-  convD:add(SpatialConvolution(ndf, ndf * 2, 4, 4, 2, 2, 1, 1))
-  convD:add(SpatialBatchNormalization(ndf * 2)):add(nn.LeakyReLU(0.2, true))
-  -- state size: (ndf*2) x 16 x 16
-  convD:add(SpatialConvolution(ndf * 2, ndf * 4, 4, 4, 2, 2, 1, 1))
-  convD:add(SpatialBatchNormalization(ndf * 4))
+    convD = nn.Sequential()
+    -- input is (nc) x 64 x 64
+    convD:add(SpatialConvolution(nc, ndf, 4, 4, 2, 2, 1, 1))
+    convD:add(nn.LeakyReLU(0.2, true))
+    -- state size: (ndf) x 32 x 32
+    convD:add(SpatialConvolution(ndf, ndf * 2, 4, 4, 2, 2, 1, 1))
+    convD:add(SpatialBatchNormalization(ndf * 2)):add(nn.LeakyReLU(0.2, true))
+    -- state size: (ndf*2) x 16 x 16
+    convD:add(SpatialConvolution(ndf * 2, ndf * 4, 4, 4, 2, 2, 1, 1))
+    convD:add(SpatialBatchNormalization(ndf * 4))
 
-  -- state size: (ndf*4) x 8 x 8
-  convD:add(SpatialConvolution(ndf * 4, ndf * 8, 4, 4, 2, 2, 1, 1))
-  convD:add(SpatialBatchNormalization(ndf * 8))
+    -- state size: (ndf*4) x 8 x 8
+    convD:add(SpatialConvolution(ndf * 4, ndf * 8, 4, 4, 2, 2, 1, 1))
+    convD:add(SpatialBatchNormalization(ndf * 8))
 
     -- state size: (ndf*8) x 4 x 4
     local conc = nn.ConcatTable()
@@ -211,69 +211,69 @@ if opt.init_d == '' then
     convD:add(nn.CAddTable())
     convD:add(nn.LeakyReLU(0.2, true))
 
-  local fcD = nn.Sequential()
-  fcD:add(nn.Linear(opt.txtSize,opt.nt))
-  fcD:add(nn.BatchNormalization(opt.nt))
-  fcD:add(nn.LeakyReLU(0.2,true))
-  fcD:add(nn.Replicate(4,3))
-  fcD:add(nn.Replicate(4,4)) 
-  netD = nn.Sequential()
-  pt = nn.ParallelTable()
-  if mi_usetext then
-    pt:add(convD)
-  else
-    pt:add(nn.Identity())
-  end
-  pt:add(fcD)
-  local pst = nn.Sequential()
-  pst:add(pt)
-  pst:add(nn.JoinTable(2))
-  if mi_usetext then
-    convD = pst
-  else
-    netD:add(pst)
-  end
-  -- state size: (ndf*8 + 128) x 4 x 4
-  netD:add(SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1))
-  netD:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
-  netD:add(SpatialConvolution(ndf * 8, 1, 4, 4))
-  netD:add(nn.Sigmoid())
-  -- state size: 1 x 1 x 1
-  netD:add(nn.View(1):setNumInputDims(3))
-  -- state size: 1
-  netD:apply(weights_init)
+    local fcD = nn.Sequential()
+    fcD:add(nn.Linear(opt.txtSize,opt.nt))
+    fcD:add(nn.BatchNormalization(opt.nt))
+    fcD:add(nn.LeakyReLU(0.2,true))
+    fcD:add(nn.Replicate(4,3))
+    fcD:add(nn.Replicate(4,4)) 
+    netD = nn.Sequential()
+    pt = nn.ParallelTable()
+    if mi_usetext then
+        pt:add(convD)
+    else
+        pt:add(nn.Identity())
+    end
+    pt:add(fcD)
+    local pst = nn.Sequential()
+    pst:add(pt)
+    pst:add(nn.JoinTable(2))
+    if mi_usetext then
+        convD = pst
+    else
+        netD:add(pst)
+    end
+    -- state size: (ndf*8 + 128) x 4 x 4
+    netD:add(SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1))
+    netD:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
+    netD:add(SpatialConvolution(ndf * 8, 1, 4, 4))
+    netD:add(nn.Sigmoid())
+    -- state size: 1 x 1 x 1
+    netD:add(nn.View(1):setNumInputDims(3))
+    -- state size: 1
+    netD:apply(weights_init)
 
-  netQ = nn.Sequential()
-  -- state size: (ndf*8 + 128) x 4 x 4
-  local netQ_l1
-  if mi_usetext then
-    netQ_li = SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1)
-  else
-    netQ_l1 = SpatialConvolution(ndf * 8, ndf * 8, 1, 1)
-  end
-  netQ:add(netQ_l1)
-  netQ:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
-  netQ:add(nn.View(ndf * 8 * 4 * 4))
-  netQ:add(nn.Linear(ndf * 8 * 4 * 4, opt.cont_codes * 2))
-  netQ:apply(weights_init)
+    netQ = nn.Sequential()
+    -- state size: (ndf*8 + 128) x 4 x 4
+    local netQ_l1
+    if mi_usetext then
+        netQ_li = SpatialConvolution(ndf * 8 + opt.nt, ndf * 8, 1, 1)
+    else
+        netQ_l1 = SpatialConvolution(ndf * 8, ndf * 8, 1, 1)
+    end
+    netQ:add(netQ_l1)
+    netQ:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
+    netQ:add(nn.View(ndf * 8 * 4 * 4))
+    netQ:add(nn.Linear(ndf * 8 * 4 * 4, opt.cont_codes * 2))
+    netQ:apply(weights_init)
 
 else
-  convD, netD, netQ = torch.load(opt.init_d)
+    convD, netD, netQ = torch.load(opt.init_d)
 end
 
 assert(math.floor(opt.batchSize / opt.numCaption) * opt.numCaption == opt.batchSize)
 netR = nn.Sequential()
 if opt.replicate == 1 then
-  netR:add(nn.Reshape(opt.batchSize / opt.numCaption, opt.numCaption, opt.txtSize))
-  netR:add(nn.Transpose({1,2}))
-  netR:add(nn.Mean(1))
-  netR:add(nn.Replicate(opt.numCaption))
-  netR:add(nn.Transpose({1,2}))
-  netR:add(nn.Reshape(opt.batchSize, opt.txtSize))
+    netR:add(nn.Reshape(opt.batchSize / opt.numCaption, opt.numCaption, opt.txtSize))
+    netR:add(nn.Transpose({1,2}))
+    netR:add(nn.Mean(1))
+    netR:add(nn.Replicate(opt.numCaption))
+    netR:add(nn.Transpose({1,2}))
+    netR:add(nn.Reshape(opt.batchSize, opt.txtSize))
 else
-  netR:add(nn.Reshape(opt.batchSize, opt.numCaption, opt.txtSize))
-  netR:add(nn.Transpose({1,2}))
-  netR:add(nn.Mean(1))
+    netR:add(nn.Reshape(opt.batchSize, opt.numCaption, opt.txtSize))
+    netR:add(nn.Transpose({1,2}))
+    netR:add(nn.Mean(1))
 end
 
 local criterion = nn.BCECriterion()
@@ -294,12 +294,12 @@ local gaussian_dist = dists.Gaussian(opt.cont_codes,gaussian_mean,gaussian_std)
 local mi_criterion = dists.MutualInformationCriterion(gaussian_dist)
 ---------------------------------------------------------------------------
 optimStateG = {
-   learningRate = opt.lr,
-   beta1 = opt.beta1,
+    learningRate = opt.lr,
+    beta1 = opt.beta1,
 }
 optimStateD = {
-   learningRate = opt.lr,
-   beta1 = opt.beta1,
+    learningRate = opt.lr,
+    beta1 = opt.beta1,
 }
 ----------------------------------------------------------------------------
 local alphabet = "abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{} "
@@ -307,9 +307,9 @@ alphabet_size = #alphabet
 local input_img = torch.Tensor(opt.batchSize, 3, opt.fineSize, opt.fineSize)
 local input_img_interp = torch.Tensor(opt.batchSize * 3/2, 3, opt.fineSize, opt.fineSize)
 if opt.replicate == 1 then
-  input_txt_raw = torch.Tensor(opt.batchSize, opt.txtSize)
+    input_txt_raw = torch.Tensor(opt.batchSize, opt.txtSize)
 else
-  input_txt_raw = torch.Tensor(opt.batchSize * opt.numCaption, opt.txtSize)
+    input_txt_raw = torch.Tensor(opt.batchSize * opt.numCaption, opt.txtSize)
 end
 local input_txt = torch.Tensor(opt.batchSize, opt.txtSize)
 local input_txt_interp = torch.zeros(opt.batchSize * 3/2, opt.txtSize)
@@ -323,32 +323,32 @@ local tm = torch.Timer()
 local data_tm = torch.Timer()
 ----------------------------------------------------------------------------
 if opt.gpu > 0 then
-   input_img = input_img:cuda()
-   input_img_interp = input_img_interp:cuda()
-   input_txt = input_txt:cuda()
-   input_txt_raw = input_txt_raw:cuda()
-   input_txt_interp = input_txt_interp:cuda()
-   noise = noise:cuda()
-   noise_interp = noise_interp:cuda()
-   label = label:cuda()
-   label_interp = label_interp:cuda()
-   convD:cuda()
-   netD:cuda()
-   netQ:cuda()
-   netG:cuda()
-   netR:cuda()
-   criterion:cuda()
-   criterion_interp:cuda()
-   mi_criterion:cuda()
+    input_img = input_img:cuda()
+    input_img_interp = input_img_interp:cuda()
+    input_txt = input_txt:cuda()
+    input_txt_raw = input_txt_raw:cuda()
+    input_txt_interp = input_txt_interp:cuda()
+    noise = noise:cuda()
+    noise_interp = noise_interp:cuda()
+    label = label:cuda()
+    label_interp = label_interp:cuda()
+    convD:cuda()
+    netD:cuda()
+    netQ:cuda()
+    netG:cuda()
+    netR:cuda()
+    criterion:cuda()
+    criterion_interp:cuda()
+    mi_criterion:cuda()
 end
 
 if opt.use_cudnn == 1 then
-  cudnn = require('cudnn')
-  convD = cudnn.convert(convD, cudnn)
-  netD = cudnn.convert(netD, cudnn)
-  netQ = cudnn.convert(netQ, cudnn)
-  netG = cudnn.convert(netG, cudnn)
-  netR = cudnn.convert(netR, cudnn)
+    cudnn = require('cudnn')
+    convD = cudnn.convert(convD, cudnn)
+    netD = cudnn.convert(netD, cudnn)
+    netQ = cudnn.convert(netQ, cudnn)
+    netG = cudnn.convert(netG, cudnn)
+    netR = cudnn.convert(netR, cudnn)
 end
 
 local dummyD = nn.Sequential()
@@ -365,261 +365,261 @@ if opt.display then disp = require 'display' end
 
 -- create closure to evaluate f(X) and df/dX of discriminator
 local fDx = function(x)
-  dummyD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
-  netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+    dummyD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+    netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
 
-  gradParametersD:zero()
+    gradParametersD:zero()
 
-  -- train with real
-  data_tm:reset(); data_tm:resume()
-  real_img, real_txt, wrong_img, _ = data:getBatch()
-  data_tm:stop()
+    -- train with real
+    data_tm:reset(); data_tm:resume()
+    real_img, real_txt, wrong_img, _ = data:getBatch()
+    data_tm:stop()
 
-  input_img:copy(real_img)
-  input_txt_raw:copy(real_txt)
-  -- average adjacent text features in batch dimension.
-  emb_txt = netR:forward(input_txt_raw)
-  input_txt:copy(emb_txt)
+    input_img:copy(real_img)
+    input_txt_raw:copy(real_txt)
+    -- average adjacent text features in batch dimension.
+    emb_txt = netR:forward(input_txt_raw)
+    input_txt:copy(emb_txt)
 
-  if opt.interp_type == 1 then
-    -- compute (a + b)/2
-    input_txt_interp:narrow(1,1,opt.batchSize):copy(input_txt)
-    input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):copy(input_txt:narrow(1,1,opt.batchSize/2))
-    input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):add(input_txt:narrow(1,opt.batchSize/2+1,opt.batchSize/2))
-    input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):mul(0.5)
-  elseif opt.interp_type == 2 then
-    -- compute (a + b)/2
-    input_txt_interp:narrow(1,1,opt.batchSize):copy(input_txt)
-    input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):copy(input_txt:narrow(1,1,opt.batchSize/2))
-    input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):add(input_txt:narrow(1,opt.batchSize/2+1,opt.batchSize/2))
-    input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):mul(0.5)
+    if opt.interp_type == 1 then
+        -- compute (a + b)/2
+        input_txt_interp:narrow(1,1,opt.batchSize):copy(input_txt)
+        input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):copy(input_txt:narrow(1,1,opt.batchSize/2))
+        input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):add(input_txt:narrow(1,opt.batchSize/2+1,opt.batchSize/2))
+        input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):mul(0.5)
+    elseif opt.interp_type == 2 then
+        -- compute (a + b)/2
+        input_txt_interp:narrow(1,1,opt.batchSize):copy(input_txt)
+        input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):copy(input_txt:narrow(1,1,opt.batchSize/2))
+        input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):add(input_txt:narrow(1,opt.batchSize/2+1,opt.batchSize/2))
+        input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):mul(0.5)
 
-    -- add extrapolation vector.
-    local alpha = torch.rand(opt.batchSize/2,1):mul(2):add(-1) -- alpha ~ uniform(-1,1)
-    if opt.gpu >=0 then
-     alpha = alpha:float():cuda()
+        -- add extrapolation vector.
+        local alpha = torch.rand(opt.batchSize/2,1):mul(2):add(-1) -- alpha ~ uniform(-1,1)
+        if opt.gpu >=0 then
+            alpha = alpha:float():cuda()
+        end
+        alpha = torch.expand(alpha,opt.batchSize/2,input_txt_interp:size(2))
+        local vec = (input_txt:narrow(1,opt.batchSize/2+1,opt.batchSize/2) - 
+        input_txt:narrow(1,1,opt.batchSize/2)):cmul(alpha)
+        input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):add(vec)
     end
-    alpha = torch.expand(alpha,opt.batchSize/2,input_txt_interp:size(2))
-    local vec = (input_txt:narrow(1,opt.batchSize/2+1,opt.batchSize/2) - 
-                input_txt:narrow(1,1,opt.batchSize/2)):cmul(alpha)
-    input_txt_interp:narrow(1,opt.batchSize+1,opt.batchSize/2):add(vec)
-  end
-  label:fill(real_label)
+    label:fill(real_label)
 
-  local convD_input
-  local netD_input
-  local convD_gradOutput
-  if mi_usetext then
-    convD_input = {input_img,input_txt}
-  else
-    convD_input = input_img
-  end
-  local output_conv = convD:forward(convD_input)
-  if mi_usetext then
-    netD_input = output_conv
-  else
-    netD_input = {output_conv, input_txt}
-  end
-  local output = netD:forward(netD_input)
-  local errD_real = criterion:forward(output, label)
-  local df_do = criterion:backward(output, label)
-  local df_dd = netD:backward(netD_input, df_do)
-  if mi_usetext then
-    convD_gradOutput = df_dd
-  else
-    convD_gradOutput = df_dd[1]
-  end
-  convD:backward(convD_input, convD_gradOutput)
+    local convD_input
+    local netD_input
+    local convD_gradOutput
+    if mi_usetext then
+        convD_input = {input_img,input_txt}
+    else
+        convD_input = input_img
+    end
+    local output_conv = convD:forward(convD_input)
+    if mi_usetext then
+        netD_input = output_conv
+    else
+        netD_input = {output_conv, input_txt}
+    end
+    local output = netD:forward(netD_input)
+    local errD_real = criterion:forward(output, label)
+    local df_do = criterion:backward(output, label)
+    local df_dd = netD:backward(netD_input, df_do)
+    if mi_usetext then
+        convD_gradOutput = df_dd
+    else
+        convD_gradOutput = df_dd[1]
+    end
+    convD:backward(convD_input, convD_gradOutput)
 
-  errD_wrong = 0
-  if opt.cls_weight > 0 then
-    -- train with wrong 
-    input_img:copy(wrong_img)
+    errD_wrong = 0
+    if opt.cls_weight > 0 then
+        -- train with wrong 
+        input_img:copy(wrong_img)
+        label:fill(fake_label)
+
+        local output_conv = convD:forward(convD_input)
+        if mi_usetext then
+            netD_input = output_conv
+        else
+            netD_input = {output_conv, input_txt}
+        end
+        local output = netD:forward(netD_input)
+        errD_wrong = opt.cls_weight*criterion:forward(output, label)
+        local df_do = criterion:backward(output, label)
+        df_do:mul(opt.cls_weight)
+        local df_dd = netD:backward(netD_input, df_do)
+        if mi_usetext then
+            convD_gradOutput = df_dd
+        else
+            convD_gradOutput = df_dd[1]
+        end
+        convD:backward(convD_input, convD_gradOutput)
+    end
+
+    -- train with fake
+    if opt.noise == 'uniform' then -- regenerate random noise
+        noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
+    elseif opt.noise == 'normal' then
+        noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
+    end
+    noise[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
+    local latent_codes = noise[{{}, {1, opt.cont_codes}, 1, 1}]
+    local fake = netG:forward{noise, input_txt}
+    input_img:copy(fake)
     label:fill(fake_label)
 
     local output_conv = convD:forward(convD_input)
+
+    local output_q = netQ:forward(output_conv)
+    errQ = mi_criterion:forward(output_q, latent_codes)
+    local dq_do = mi_criterion:backward(output_q, latent_codes)
+    errQ = errQ * opt.mi_weight
+    dq_do:mul(opt.mi_weight)
+    local dq_dd = netQ:backward(output_conv, dq_do)
+    -- This will train the text reduction layer as well.. Confirm
+    convD:backward(convD_input, dq_dd)
+
     if mi_usetext then
-      netD_input = output_conv
+        netD_input = output_conv
     else
-      netD_input = {output_conv, input_txt}
+        netD_input = {output_conv, input_txt}
     end
     local output = netD:forward(netD_input)
-    errD_wrong = opt.cls_weight*criterion:forward(output, label)
+    local errD_fake = criterion:forward(output, label)
     local df_do = criterion:backward(output, label)
-    df_do:mul(opt.cls_weight)
+    local fake_weight = 1 - opt.cls_weight
+    errD_fake = errD_fake*fake_weight
+    df_do:mul(fake_weight)
     local df_dd = netD:backward(netD_input, df_do)
     if mi_usetext then
-      convD_gradOutput = df_dd
+        convD_gradOutput = df_dd
     else
-      convD_gradOutput = df_dd[1]
+        convD_gradOutput = df_dd[1]
     end
     convD:backward(convD_input, convD_gradOutput)
-  end
 
-  -- train with fake
-  if opt.noise == 'uniform' then -- regenerate random noise
-    noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
-  elseif opt.noise == 'normal' then
-    noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
-  end
-  noise[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
-  local latent_codes = noise[{{}, {1, opt.cont_codes}, 1, 1}]
-  local fake = netG:forward{noise, input_txt}
-  input_img:copy(fake)
-  label:fill(fake_label)
+    errD = errD_real + errD_fake + errD_wrong
+    errW = errD_wrong
 
-  local output_conv = convD:forward(convD_input)
-
-  local output_q = netQ:forward(output_conv)
-  errQ = mi_criterion:forward(output_q, latent_codes)
-  local dq_do = mi_criterion:backward(output_q, latent_codes)
-  errQ = errQ * opt.mi_weight
-  dq_do:mul(opt.mi_weight)
-  local dq_dd = netQ:backward(output_conv, dq_do)
-  -- This will train the text reduction layer as well.. Confirm
-  convD:backward(convD_input, dq_dd)
-
-  if mi_usetext then
-    netD_input = output_conv
-  else
-    netD_input = {output_conv, input_txt}
-  end
-  local output = netD:forward(netD_input)
-  local errD_fake = criterion:forward(output, label)
-  local df_do = criterion:backward(output, label)
-  local fake_weight = 1 - opt.cls_weight
-  errD_fake = errD_fake*fake_weight
-  df_do:mul(fake_weight)
-  local df_dd = netD:backward(netD_input, df_do)
-  if mi_usetext then
-    convD_gradOutput = df_dd
-  else
-    convD_gradOutput = df_dd[1]
-  end
-  convD:backward(convD_input, convD_gradOutput)
-
-  errD = errD_real + errD_fake + errD_wrong
-  errW = errD_wrong
-
-  return errD, gradParametersD
+    return errD, gradParametersD
 end
 
 -- create closure to evaluate f(X) and df/dX of generator
 local fGx = function(x)
-  dummyD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
-  netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+    dummyD:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
+    netG:apply(function(m) if torch.type(m):find('Convolution') then m.bias:zero() end end)
 
-  gradParametersG:zero()
+    gradParametersG:zero()
 
-  if opt.noise == 'uniform' then -- regenerate random noise
-    noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
-  elseif opt.noise == 'normal' then
-    noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
-  end
-  noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
-  local latent_codes = noise_interp[{{}, {1, opt.cont_codes}, 1, 1}]
+    if opt.noise == 'uniform' then -- regenerate random noise
+        noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
+    elseif opt.noise == 'normal' then
+        noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
+    end
+    noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
+    local latent_codes = noise_interp[{{}, {1, opt.cont_codes}, 1, 1}]
 
-  local fake = netG:forward{noise_interp, input_txt_interp}
-  input_img_interp:copy(fake)
-  label_interp:fill(real_label) -- fake labels are real for generator cost
+    local fake = netG:forward{noise_interp, input_txt_interp}
+    input_img_interp:copy(fake)
+    label_interp:fill(real_label) -- fake labels are real for generator cost
 
-  local convD_input
-  local netD_input
-  local convD_gradOutput
-  local netG_gradOutput
-  if mi_usetext then
-    convD_input = {input_img_interp,input_txt_interp}
-  else
-    convD_input = input_img_interp
-  end
-  local output_conv = convD:forward(convD_input)
-  if mi_usetext then
-    netD_input = output_conv
-  else
-    netD_input = {output_conv, input_txt_interp}
-  end
+    local convD_input
+    local netD_input
+    local convD_gradOutput
+    local netG_gradOutput
+    if mi_usetext then
+        convD_input = {input_img_interp,input_txt_interp}
+    else
+        convD_input = input_img_interp
+    end
+    local output_conv = convD:forward(convD_input)
+    if mi_usetext then
+        netD_input = output_conv
+    else
+        netD_input = {output_conv, input_txt_interp}
+    end
 
-  local output_q = netQ:forward(output_conv)
-  errQ = mi_criterion:forward(output_q, latent_codes)
-  local dq_do = mi_criterion:backward(output_q, latent_codes)
-  errQ = errQ * opt.mi_weight
-  dq_do:mul(opt.mi_weight)
-  local dq_dg = netQ:updateGradInput(output_conv, dq_do)
-  dq_dg = convD:updateGradInput(convD_input, dq_dg)
+    local output_q = netQ:forward(output_conv)
+    errQ = mi_criterion:forward(output_q, latent_codes)
+    local dq_do = mi_criterion:backward(output_q, latent_codes)
+    errQ = errQ * opt.mi_weight
+    dq_do:mul(opt.mi_weight)
+    local dq_dg = netQ:updateGradInput(output_conv, dq_do)
+    dq_dg = convD:updateGradInput(convD_input, dq_dg)
 
-  if mi_usetext then
-    netG_gradOutput = dq_dg[1]
-  else
-    netG_gradOutput = dq_dg
-  end
-  netG:backward({noise_interp, input_txt_interp}, netG_gradOutput)
+    if mi_usetext then
+        netG_gradOutput = dq_dg[1]
+    else
+        netG_gradOutput = dq_dg
+    end
+    netG:backward({noise_interp, input_txt_interp}, netG_gradOutput)
 
-  local output = netD:forward(netD_input)
-  errG = criterion_interp:forward(output, label_interp)
-  local df_do = criterion_interp:backward(output, label_interp)
-  local df_dg = netD:updateGradInput(netD_input, df_do)
-  if mi_usetext then
-    convD_gradOutput = df_dg
-  else
-    convD_gradOutput = df_dg[1]
-  end
-  df_dg = convD:updateGradInput(convD_input, convD_gradOutput)
+    local output = netD:forward(netD_input)
+    errG = criterion_interp:forward(output, label_interp)
+    local df_do = criterion_interp:backward(output, label_interp)
+    local df_dg = netD:updateGradInput(netD_input, df_do)
+    if mi_usetext then
+        convD_gradOutput = df_dg
+    else
+        convD_gradOutput = df_dg[1]
+    end
+    df_dg = convD:updateGradInput(convD_input, convD_gradOutput)
 
-  if mi_usetext then
-    netG_gradOutput = df_dg[1]
-  else
-    netG_gradOutput = df_dg
-  end
-  netG:backward({noise_interp, input_txt_interp}, netG_gradOutput)
-  return errG, gradParametersG
+    if mi_usetext then
+        netG_gradOutput = df_dg[1]
+    else
+        netG_gradOutput = df_dg
+    end
+    netG:backward({noise_interp, input_txt_interp}, netG_gradOutput)
+    return errG, gradParametersG
 end
 
 -- train
 for epoch = 1, opt.niter do
-  epoch_tm:reset()
+    epoch_tm:reset()
 
-  if epoch % opt.decay_every == 0 then
-    optimStateG.learningRate = optimStateG.learningRate * opt.lr_decay
-    optimStateD.learningRate = optimStateD.learningRate * opt.lr_decay
-  end
-
-  for i = 1, math.min(data:size(), opt.ntrain), opt.batchSize do
-    tm:reset()
-    -- (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-    optim.adam(fDx, parametersD, optimStateD)
-
-    -- (2) Update G network: maximize log(D(G(z)))
-    optim.adam(fGx, parametersG, optimStateG)
-
-    -- logging
-    if ((i-1) / opt.batchSize) % opt.print_every == 0 then
-      print(('[%d][%d/%d] T:%.3f  DT:%.3f lr: %.4g '
-                .. '  Err_G: %.4f Err_D: %.4f Err_W: %.4f Err_Q: %.4f'):format(
-              epoch, ((i-1) / opt.batchSize),
-              math.floor(math.min(data:size(), opt.ntrain) / opt.batchSize),
-              tm:time().real, data_tm:time().real,
-              optimStateG.learningRate,
-              errG and errG or -1, errD and errD or -1,
-              errW and errW or -1, errQ and errQ or -1))
-      local fake = netG.output
-      if opt.display then
-        disp.image(fake:narrow(1,1,opt.batchSize), {win=opt.display_id, title=opt.name})
-        disp.image(real_img, {win=opt.display_id * 3, title=opt.name})
-      end
+    if epoch % opt.decay_every == 0 then
+        optimStateG.learningRate = optimStateG.learningRate * opt.lr_decay
+        optimStateD.learningRate = optimStateD.learningRate * opt.lr_decay
     end
-  end
-  if epoch % opt.save_every == 0 then
-    local fake = netG.output
-    fake_out = image.toDisplayTensor(fake:narrow(1,1,opt.batchSize))
-    image.save(opt.out_image_dir .. '/' .. 'fake_' .. epoch .. '.png', fake_out)
-    real_out = image.toDisplayTensor(real_img)
-    image.save(opt.out_image_dir .. '/' .. 'real_' .. epoch .. '.png', real_out)
-    paths.mkdir(opt.checkpoint_dir)
-    torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_G.t7', netG)
-    torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_D.t7', {convD, netD, netQ})
-    torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_opt.t7', opt)
-    print(('End of epoch %d / %d \t Time Taken: %.3f'):format(
-           epoch, opt.niter, epoch_tm:time().real))
-  end
+
+    for i = 1, math.min(data:size(), opt.ntrain), opt.batchSize do
+        tm:reset()
+        -- (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
+        optim.adam(fDx, parametersD, optimStateD)
+
+        -- (2) Update G network: maximize log(D(G(z)))
+        optim.adam(fGx, parametersG, optimStateG)
+
+        -- logging
+        if ((i-1) / opt.batchSize) % opt.print_every == 0 then
+            print(('[%d][%d/%d] T:%.3f  DT:%.3f lr: %.4g '
+            .. '  Err_G: %.4f Err_D: %.4f Err_W: %.4f Err_Q: %.4f'):format(
+            epoch, ((i-1) / opt.batchSize),
+            math.floor(math.min(data:size(), opt.ntrain) / opt.batchSize),
+            tm:time().real, data_tm:time().real,
+            optimStateG.learningRate,
+            errG and errG or -1, errD and errD or -1,
+            errW and errW or -1, errQ and errQ or -1))
+            local fake = netG.output
+            if opt.display then
+                disp.image(fake:narrow(1,1,opt.batchSize), {win=opt.display_id, title=opt.name})
+                disp.image(real_img, {win=opt.display_id * 3, title=opt.name})
+            end
+        end
+    end
+    if epoch % opt.save_every == 0 then
+        local fake = netG.output
+        fake_out = image.toDisplayTensor(fake:narrow(1,1,opt.batchSize))
+        image.save(opt.out_image_dir .. '/' .. 'fake_' .. epoch .. '.png', fake_out)
+        real_out = image.toDisplayTensor(real_img)
+        image.save(opt.out_image_dir .. '/' .. 'real_' .. epoch .. '.png', real_out)
+        paths.mkdir(opt.checkpoint_dir)
+        torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_G.t7', netG)
+        torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_net_D.t7', {convD, netD, netQ})
+        torch.save(opt.checkpoint_dir .. '/' .. opt.name .. '_' .. epoch .. '_opt.t7', opt)
+        print(('End of epoch %d / %d \t Time Taken: %.3f'):format(
+        epoch, opt.niter, epoch_tm:time().real))
+    end
 end
 
