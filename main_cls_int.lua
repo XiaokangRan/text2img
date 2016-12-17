@@ -51,7 +51,9 @@ opt = {
     gpu = 2,                -- gpu = 0 is CPU mode. gpu=X is GPU mode on GPU X
     name = 'experiment_long',
     noise = 'normal',       -- uniform / normal
-    cont_codes = 5,         -- number of continuous latent codes
+    cont_codes = 3,         -- number of continuous latent codes
+    disc_codes = 5,         -- number of discrete latent codes
+    cont_prior = 'uniform', -- continuous latent code uniform/gaussian
     cont_range = 1.0,       -- uniform between [-cont_range, cont_range]
     mi_weight = 1.0,
     mi_usetext = false,
@@ -106,6 +108,27 @@ local fake_label = 0
 local SpatialBatchNormalization = nn.SpatialBatchNormalization
 local SpatialConvolution = nn.SpatialConvolution
 local SpatialFullConvolution = nn.SpatialFullConvolution
+
+local gaussian_mean = torch.zeros(opt.cont_codes)
+local gaussian_std = torch.ones(opt.cont_codes)
+local disc_probs = torch.ones(opt.disc_codes)/opt.disc_codes
+
+if opt.gpu > 0 then
+    gaussian_mean   = gaussian_mean:cuda()
+    gaussian_std    = gaussian_std:cuda()
+    disc_probs      = disc_probs:cuda()
+end
+
+local gaussian_dist = dists.Gaussian(opt.cont_codes,gaussian_mean,gaussian_std)
+local disc_dist     = dists.Categorical(opt.disc_codes,disc_probs)
+local hybrid_dist   = dists.Hybrid()
+
+if opt.cont_codes > 0 then
+    hybrid_dist:add(gaussian_dist)
+end
+if opt.disc_codes > 0 then
+    hybrid_dist:add(disc_dist)
+end
 
 if opt.init_g == '' then
     fcG = nn.Sequential()
@@ -254,7 +277,7 @@ if opt.init_d == '' then
     netQ:add(netQ_l1)
     netQ:add(SpatialBatchNormalization(ndf * 8)):add(nn.LeakyReLU(0.2, true))
     netQ:add(nn.View(ndf * 8 * 4 * 4))
-    netQ:add(nn.Linear(ndf * 8 * 4 * 4, opt.cont_codes * 2))
+    netQ:add(nn.Linear(ndf * 8 * 4 * 4, hybrid_dist:n_params()))
     netQ:apply(weights_init)
 
 else
@@ -282,16 +305,7 @@ weights:narrow(1,1,opt.batchSize):fill(1)
 weights:narrow(1,opt.batchSize+1,opt.batchSize/2):fill(opt.interp_weight)
 local criterion_interp = nn.BCECriterion(weights)
 
-local gaussian_mean = torch.zeros(opt.cont_codes)
-local gaussian_std = torch.ones(opt.cont_codes)
-
-if opt.gpu > 0 then
-    gaussian_mean = gaussian_mean:cuda()
-    gaussian_std = gaussian_std:cuda()
-end
-
-local gaussian_dist = dists.Gaussian(opt.cont_codes,gaussian_mean,gaussian_std)
-local mi_criterion = dists.MutualInformationCriterion(gaussian_dist)
+local mi_criterion = dists.MutualInformationCriterion(hybrid_dist)
 ---------------------------------------------------------------------------
 optimStateG = {
     learningRate = opt.lr,
@@ -458,12 +472,23 @@ local fDx = function(x)
 
     -- train with fake
     if opt.noise == 'uniform' then -- regenerate random noise
-        noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
+        noise[{{}, {hybrid_dist:n_vars() + 1, -1}, {}, {}}]:uniform(-1, 1)
     elseif opt.noise == 'normal' then
-        noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
+        noise[{{}, {hybrid_dist:n_vars() + 1, -1}, {}, {}}]:normal(0, 1)
     end
-    noise[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
-    local latent_codes = noise[{{}, {1, opt.cont_codes}, 1, 1}]
+    if opt.cont_prior == 'uniform' then
+        noise[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
+        if opt.disc_codes > 0 then
+            noise[{{}, {opt.cont_codes+1, opt.cont_codes+opt.disc_codes}, {}, {}}] =
+                disc_dist:sample(torch.Tensor(noise:size(1),opt.disc_codes):typeAs(noise),
+                disc_dist.prior_params)
+        end
+    else
+        noise[{{}, {1, hybrid_dist:n_vars()}, {}, {}}] =
+            hybrid_dist:sample(torch.Tensor(noise:size(1),hybrid_dist:n_vars()):typeAs(noise),
+            hybrid_dist.prior_params)
+    end
+    local latent_codes = noise[{{}, {1, hybrid_dist:n_vars()}, 1, 1}]
     local fake = netG:forward{noise, input_txt}
     input_img:copy(fake)
     label:fill(fake_label)
@@ -512,12 +537,25 @@ local fGx = function(x)
     gradParametersG:zero()
 
     if opt.noise == 'uniform' then -- regenerate random noise
-        noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
+        noise_interp[{{}, {hybrid_dist:n_vars() + 1, -1}, {}, {}}]:uniform(-1, 1)
     elseif opt.noise == 'normal' then
-        noise_interp[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
+        noise_interp[{{}, {hybrid_dist:n_vars() + 1, -1}, {}, {}}]:normal(0, 1)
     end
-    noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
-    local latent_codes = noise_interp[{{}, {1, opt.cont_codes}, 1, 1}]
+    
+    if opt.cont_prior == 'uniform' then
+        noise_interp[{{}, {1, opt.cont_codes}, {}, {}}]:uniform(-opt.cont_range, opt.cont_range)
+        if opt.disc_codes > 0 then
+            noise_interp[{{}, {opt.cont_codes+1, opt.cont_codes+opt.disc_codes}, {}, {}}] =
+                disc_dist:sample(torch.Tensor(noise_interp:size(1),opt.disc_codes):typeAs(noise_interp),
+                disc_dist.prior_params)
+        end
+    else
+        noise_interp[{{}, {1, hybrid_dist:n_vars()}, {}, {}}] =
+            hybrid_dist:sample(torch.Tensor(noise_interp:size(1),hybrid_dist:n_vars()):typeAs(noise_interp),
+            hybrid_dist.prior_params)
+    end
+    
+    local latent_codes = noise_interp[{{}, {1, hybrid_dist:n_vars()}, 1, 1}]
 
     local fake = netG:forward{noise_interp, input_txt_interp}
     input_img_interp:copy(fake)
