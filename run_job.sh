@@ -11,7 +11,7 @@ then
     ./scripts/train_cub.sh $mi_wt $img_dir $cp_dir
 elif [ "$dataset" == "flowers" ]
 then
-    ./scripts/train_flowers.sh
+    ./scripts/train_flowers.sh $mi_wt $img_dir $cp_dir
 elif [ "$dataset" == "coco" ]
 then
     ./scripts/train_coco.sh
