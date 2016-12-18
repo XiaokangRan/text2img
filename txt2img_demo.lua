@@ -33,7 +33,8 @@ opt = {
     checkpoint_dir = '',
     net_gen = '',
     net_txt = '',
-    cont_codes = 5,         -- number of continuous latent codes
+    cont_codes = 3,         -- number of continuous latent codes
+    disc_codes = 5,         -- number of discrete latent codes
     cont_range = 2.0,       -- vary uniformly between [-cont_range, cont_range]
     cont_samples = 10,      -- number of images between [-cont_range, cont_range] to generate (if not web)
     web = false,            -- use web frontend
@@ -43,6 +44,8 @@ opt = {
 for k,v in pairs(opt) do opt[k] = tonumber(os.getenv(k)) or os.getenv(k) or opt[k] end
 print(opt)
 if opt.display == 0 then opt.display = false end
+
+local latent_codes = opt.cont_codes + opt.disc_codes
 
 noise = torch.Tensor(opt.batchSize, opt.nz, opt.imsize, opt.imsize)
 net_gen = torch.load(opt.checkpoint_dir .. '/' .. opt.net_gen)
@@ -88,17 +91,25 @@ if not opt.web then
 
     for i = 1,#fea_txt do
         if opt.noisetype == 'uniform' then
-            noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
+            noise[{{}, {latent_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
         elseif opt.noisetype == 'normal' then
-            noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
+            noise[{{}, {latent_codes + 1, -1}, {}, {}}]:normal(0, 1)
         end
-        for j = 1,opt.cont_codes do
-            for idx = 1,opt.cont_samples do
-                k = cont_range[idx]
+        for j = 1,latent_codes do
+            local loop_limit = opt.cont_samples
+            if j > opt.cont_codes then
+                loop_limit = 1
+            end
+            for idx = 1,loop_limit do
+                if j > opt.cont_codes then
+                    k = 1
+                else
+                    k = cont_range[idx]
+                end
                 print(string.format('generating %d of %d, code %d, value %f', i, #fea_txt, j, k))
                 local cur_fea_txt = torch.repeatTensor(fea_txt[i], opt.batchSize, 1)
                 local cur_raw_txt = raw_txt[i]
-                noise[{{}, {1, opt.cont_codes}, {}, {}}]:zero()
+                noise[{{}, {1, latent_codes}, {}, {}}]:zero()
                 noise[{{}, j, {}, {}}]:fill(k)
 
                 local images = net_gen:forward{noise, cur_fea_txt:cuda()}
@@ -131,6 +142,7 @@ if opt.web then
     end
 
     local app = require('waffle')
+    local htmlua = require('htmlua')
     app.set('public', '.')
     local js = [[
     update = function(id, value) {
@@ -164,13 +176,13 @@ if opt.web then
         fea_txt = net_txt:forward(txt):clone()
 
         if opt.noisetype == 'uniform' then
-            noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
+            noise[{{}, {latent_codes + 1, -1}, {}, {}}]:uniform(-1, 1)
         elseif opt.noisetype == 'normal' then
-            noise[{{}, {opt.cont_codes + 1, -1}, {}, {}}]:normal(0, 1)
+            noise[{{}, {latent_codes + 1, -1}, {}, {}}]:normal(0, 1)
         end
         cur_fea_txt = torch.repeatTensor(fea_txt, opt.batchSize, 1)
         cur_raw_txt = query_str
-        noise[{{}, {1, opt.cont_codes}, {}, {}}]:zero()
+        noise[{{}, {1, latent_codes}, {}, {}}]:zero()
 
         images = net_gen:forward{noise, cur_fea_txt:cuda()}
         visdir = string.format('results/%s', opt.dataset)
@@ -180,21 +192,36 @@ if opt.web then
         images:add(1):mul(0.5)
         image.save(fname_png, image.toDisplayTensor(images,4,opt.batchSize/2))
 
-        res.send(html { body {
-            script { type='text/javascript', js },
+        local body_txt = { script { type='text/javascript', js },
             img { src=fname_png, id='main' }, br,
-            -- FIXME remove hard coding
-            input { type='range', min=-opt.cont_range, max=opt.cont_range, value=0.0, step=0.1, onchange="update(1, this.value)" }, br,
-            input { type='range', min=-opt.cont_range, max=opt.cont_range, value=0.0, step=0.1, onchange="update(2, this.value)" }, br,
-            input { type='range', min=-opt.cont_range, max=opt.cont_range, value=0.0, step=0.1, onchange="update(3, this.value)" }, br,
-            input { type='range', min=-opt.cont_range, max=opt.cont_range, value=0.0, step=0.1, onchange="update(4, this.value)" }, br,
-            input { type='range', min=-opt.cont_range, max=opt.cont_range, value=0.0, step=0.1, onchange="update(5, this.value)" }, br,
-            p { "Image is updated when slider is released. Don't update faster than the network can generate images!" }
-        }})
+        }
+        for i=1,opt.cont_codes do
+            body_txt[#body_txt+1] = input { type='range', min=-opt.cont_range, max=opt.cont_range, value=0.0, step=0.1, onchange="update(" .. i .. ", this.value)" }
+            body_txt[#body_txt+1] = br
+        end
+        if opt.disc_codes > 0 then
+            local disc_range = torch.range(0,opt.disc_codes):totable()
+            local select_options = each(disc_range,option)
+            select_options.onchange = "update('disc',this.value)"
+            body_txt[#body_txt+1] = htmlua.select(select_options)
+        end
+        body_txt[#body_txt+1] = br
+        body_txt[#body_txt+1] = p { "Image is updated when slider is released. Don't update faster than the network can generate images!" }
+
+        res.send(html { body(body_txt) })
     end)
 
     app.get('/update', function(req, res)
-        for i = 1,opt.cont_codes do
+        local disc_activate = req.url.args['cdisc']
+        if opt.disc_codes > 0 and disc_activate then
+            for i = opt.cont_codes+1,latent_codes do
+                req.url.args[string.format('c%d',i)] = 0
+                if i==opt.cont_codes+disc_activate then
+                    req.url.args[string.format('c%d',i)] = 1
+                end
+            end
+        end
+        for i = 1,latent_codes do
             if req.url.args[string.format('c%d', i)] ~= nil then
                 noise[{{}, i, {}, {}}]:fill(req.url.args[string.format('c%d', i)])
             end
