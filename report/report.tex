@@ -113,34 +113,28 @@ Mutual information
 \mathcal{I}(c;G(z,c)) = \mathcal{H}(G(z,c)) - \mathcal{H}(G(z,c) \mid c) = \mathcal{H}(c) - \mathcal{H}(c\mid G(z,c))
 \end{align}
 
-Variational 
+Variational lower bound
 \begin{align}
 \mathcal{I}(c;G(z,c)) &\geq \E_{x\sim G(z,c)}\left[\E_{c'\sim p(c\mid x)}\left[\log Q(c'\mid x)\right]\right] + \mathcal{H}(c)
 \end{align}
 
-Under suitable regularity conditions, we have the variational lower bound 
+or in our case
 \begin{align}
-\mathcal{I}(c;G(z,c)) &\geq \E_{c\sim p(c), x\sim G(z,c)}\left[\log Q(c\mid x)\right] + \mathcal{H}(c) = L_I(G,Q) \label{eq:miloss}
+\mathcal{I}(c;G(z,c,\varphi(t))) &\geq \E_{t\sim p_{\text{intdata}}(t), x\sim G(z,c,\varphi(t))}\left[\E_{c'\sim p(c\mid x,t)}\left[\log Q(c'\mid x,t)\right]\right] + \mathcal{H}(c)
 \end{align}
 
-Can also define
+Under suitable regularity conditions, we have the variational lower bound
 \begin{align}
 \mathcal{I}(c;G(z,c, \varphi(t))) &\geq \E_{c\sim p(c), t\sim p_{\text{intdata}}(t), x\sim G(z,c, \varphi(t))}\left[\log Q(c\mid x,t)\right] + \mathcal{H}(c) = \mathcal{L}_I(G,Q,\varphi) \label{eq:t2imiloss}
 \end{align}
 
-Here, we can choose to assume that the output of $Q$ is conditionally independent of $t$ given $x$, in which case $Q(c\mid x,t)$ simplifies to $Q(c\mid x)$.
-
-InfoGAN:
-\begin{align}
-\min_{G,Q} \max_D\, V_{\text{InfoGAN}}(D,G,Q) = V(D,G) - \lambda L_I(G,Q)
-\end{align}
-where $V(D,G)$ from Equation (\ref{eq:gan}), $L_I(G,Q)$ from Equation (\ref{eq:miloss}).
+An alternate model is possible where we assume that the output of $Q$ is conditionally independent of $t$ given $x$, in which case $Q(c\mid x,t)$ simplifies to $Q(c\mid x)$. Equivalent to removing a direct edge between $t$ and $c'$ in the graphical model.
 
 Text to Image InfoGAN:
 \begin{align}
 \min_{G,Q} \max_D\, \mathcal{V}_{\text{InfoGAN}}(D,G,Q,\varphi) = \mathcal{V}(D,G,\varphi) - \lambda \mathcal{L}_I(G,Q,\varphi)
 \end{align}
-where $\mathcal{V}(D,G,\varphi)$ from Equation (\ref{eq:t2i}), $\mathcal{L}_I(G,Q,\varphi)$ from Equation (\ref{eq:t2imiloss}). Here, $\mathcal{L}_I$ can be implemented to not use $\varphi$ learn to maximize mutual information in an unconditional manner.
+where $\mathcal{V}(D,G,\varphi)$ from Equation (\ref{eq:t2i}), $\mathcal{L}_I(G,Q,\varphi)$ from Equation (\ref{eq:t2imiloss}).
 
 
 

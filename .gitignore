@@ -1,3 +1,4 @@
 *.html
 report/report.pdf
+report/*.swp
 results/*
