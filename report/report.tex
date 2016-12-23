@@ -84,19 +84,76 @@
   Generation of realistic images given a text describing it is a challenging and interesting problem. With the recent successes of Generative Adversarial Networks in this field, we aim to explore it and use information theoretical extension to it to isolate meaningful latent variables.
 \end{abstract}
 
-\section{Overview}
 
-\subsection{DCGAN}
+\section{Introduction}
 
-GAN:
+
+\section{Background}
+
+\subsection{Generative Adversarial Network (GAN)}
+
+Generative Adversarial Networks (GANs) \cite{gan} have been tremendously successful in learning to generate realistic images by playing a min-max game. A discriminator $D$ is trained to classify input images as coming from the data distribution (`real') or coming from the generator (`fake'). A generator $G$ is trained to fool the discriminator by producing images that are indistinguishable from real images for the discriminator. The generator takes as input a noise vector $z$, coming from a prior distribution, and maps it to a point in the pixel space, which represents an image. The prior noise distribution usually has zero mean and is a Gaussian or a uniform distribution.
+
+The GAN objective can thus be formulated as
 \begin{align}
 \min_G \max_D\, V(D,G) = \E_{x \sim p_{\text{data}}(x)}\left[\log D(x)\right] + \E_{z\sim p_z(z)}\left[\log(1-D(G(z)))\right] \label{eq:gan}
 \end{align}
 
+The signal for the generator to update its generative model comes from the discriminator itself, by using gradients of the discriminator loss with respect to the generated image. In practice, gradients from the discriminator are reversed and backpropagated to the generator, thereby asking the generator to maximize the discriminator's loss.
 
-\subsection{Generative Adversarial Text to Image Synthesis}
+
+\subsection{Deep Convolutional GAN (DCGAN)}
+
+To get better quality generations from the generators of GANs, \cite{dcgan} presented an architecture called deep convolutional GAN (DCGAN) where the generator and the discriminator are convolutional networks that mirror each other in structure.
+
+They also replace the pooling layers with strided convolutions in the discriminator and fractional-strided convolutions in the generator. Additionally, they use the LeakyReLU activation in the discriminator for all layers instead of ReLU. These two additions ensure that there are no sparse gradients in the discriminator, which helps with the stability of the min-max objective training. To alleviate internal covariate shift and help make training more stable, they use batch normalization \cite{batchnorm} in both the generator and the discriminator. There are no fully connected hidden layers, enabling deeper models.
+
+The text to image architecture we use is based on the DCGAN architecture.
 
 
+
+\subsection{Information Maximizing GAN (InfoGAN)}
+
+Information maximizing GAN (InfoGAN)\cite{infogan} is an extension to GAN that learns disentangled representations in an unsupervised manner. Unlike the standard GAN, where an image is generated from a noise vector $z$, an image in this case is generated from a noise vector $z$ and latent codes $c$. Like $z$, we define a prior distribution over $c$ with zero mean, which is usually taken to be a Gaussian or a uniform distribution. $c$ can also contain discrete latent codes, which can have a discrete uniform prior.
+
+To learn disentangled representations, the model maximizes the mutual information between $c$ and the generated image $G(z,c)$, where the mutual information is given by
+\begin{align}
+\mathcal{I}(c;G(z,c)) = \mathcal{H}(G(z,c)) - \mathcal{H}(G(z,c) \mid c) = \mathcal{H}(c) - \mathcal{H}(c\mid G(z,c)) \label{eq:mi}
+\end{align}
+
+The authors derive a variational lower bound to Equation (\ref{eq:mi}):
+\begin{align}
+\mathcal{I}(c;G(z,c)) &\geq \E_{x\sim G(z,c)}\left[\E_{c'\sim p(c\mid x)}\left[\log Q(c'\mid x)\right]\right] + \mathcal{H}(c) \label{eq:milb}
+\end{align}
+where $Q$ is a variational approximation for $p(c\mid x)$. They show that under suitable regularity conditions, Equation (\ref{eq:milb}) can be simplified to
+\begin{align}
+\mathcal{I}(c;G(z,c)) &\geq \E_{c\sim p(c), x\sim G(z,c)}\left[\log Q(c\mid x)\right] + \mathcal{H}(c) = L_I(G,Q) \label{eq:miloss}
+\end{align}
+
+Thus, by maximizing $L_I(G,Q)$, we would maximize the mutual information between $c$ and $G(z,c)$. $L_I$ can be added to the GAN's objective and maximized jointly with respect to $G$ and $Q$ as
+\begin{align}
+\min_{G,Q} \max_D\, V_{\text{InfoGAN}}(D,G,Q) = V(D,G) - \lambda L_I(G,Q)
+\end{align}
+where $V(D,G)$ is defined in Equation (\ref{eq:gan}). $\lambda$ is a hyperparameter, that is tuned to weigh the mutual information criterion in the learning objective. The authors suggest setting this value such that $\lambda L_I$ is on the same scale as the GAN objective $V$.
+
+In practice, $Q$ shares all of its layers and parameters with $D$ upto $D$'s penultimate layer, following with an additional layer that outputs the sufficient statistics of the distribution $Q(c\mid x)$. For a Gaussian, these are the mean and diagonal covariance values. For discrete latent codes, these are the softmax logits. $Q$ converges very quickly during training, and thus it essentially comes for free with GAN, without the need for additional training time or model capacity beyond a single layer.
+
+
+\subsection{Deep symmetric structured joint embedding}
+
+Given an image $v\in\mathcal{V}$ and its corresponding fine-grained textual description $t\in\mathcal{T}$, \cite{visualdesc} suggest learning the encodings $\theta(v)$ for images and $\varphi(t)$ for text, such that a joint embedding $F(v,t)=\theta(v)^\top \varphi(t)$ can be defined. They define the classifiers
+\begin{align}
+f_v(v) &= \argmax_{y\in\mathcal{Y}} \E_{t\in\mathcal{T}(y)}\left[F(v,t)\right],\\
+f_t(t) &= \argmax_{y\in\mathcal{Y}} \E_{v\in\mathcal{V}(y)}\left[F(v,t)\right]
+\end{align}
+to classify data points $(v,t)$ into labels $y\in\mathcal{Y}$. By jointly training the text and image encoders to minimize the classification loss, they are able to learn visually descriptive embeddings $\varphi(t)$ for text and embeddings $\theta(v)$ for images, such that they have a higher compatibility score $F$ when their class is the same.
+
+They explore various text encoder models, such as a convolutional network, a convolutional recurrent network and a recurrent network. For our work on text to image synthesis, we use pretrained text encoders provided by the authors, that use a character-level convolutional recurrent network.
+
+
+\section{Text to Image InfoGAN}
+
+\subsection{Objective}
 
 Text to Image GAN:
 \begin{align}
@@ -106,22 +163,12 @@ Text to Image GAN:
 where $t \sim p_{\text{intdata}}(t)$ is short for sampling as $t_1 \sim p_{\text{data}}(t), t_2 \sim p_{\text{data}}(t), \beta \sim [0,1], t = \beta t_1 + (1-\beta) t_2$.
 
 
-\subsection{InfoGAN}
 
-Mutual information
-\begin{align}
-\mathcal{I}(c;G(z,c)) = \mathcal{H}(G(z,c)) - \mathcal{H}(G(z,c) \mid c) = \mathcal{H}(c) - \mathcal{H}(c\mid G(z,c))
-\end{align}
-
-Variational lower bound
-\begin{align}
-\mathcal{I}(c;G(z,c)) &\geq \E_{x\sim G(z,c)}\left[\E_{c'\sim p(c\mid x)}\left[\log Q(c'\mid x)\right]\right] + \mathcal{H}(c)
-\end{align}
-
-or in our case
 \begin{align}
 \mathcal{I}(c;G(z,c,\varphi(t))) &\geq \E_{t\sim p_{\text{intdata}}(t), x\sim G(z,c,\varphi(t))}\left[\E_{c'\sim p(c\mid x,t)}\left[\log Q(c'\mid x,t)\right]\right] + \mathcal{H}(c)
 \end{align}
+
+(the $p_{\text{intdata}}(t)$ here should probably be something like $p_t(t)$ since during real data we give it from data and during fake from intdata)
 
 Under suitable regularity conditions, we have the variational lower bound
 \begin{align}
@@ -132,14 +179,16 @@ An alternate model is possible where we assume that the output of $Q$ is conditi
 
 Text to Image InfoGAN:
 \begin{align}
-\min_{G,Q} \max_D\, \mathcal{V}_{\text{InfoGAN}}(D,G,Q,\varphi) = \mathcal{V}(D,G,\varphi) - \lambda \mathcal{L}_I(G,Q,\varphi)
+\min_{G,Q} \max_D\, \mathcal{V}_{\text{t2i2GAN}}(D,G,Q,\varphi) = \mathcal{V}(D,G,\varphi) - \lambda \mathcal{L}_I(G,Q,\varphi)
 \end{align}
 where $\mathcal{V}(D,G,\varphi)$ from Equation (\ref{eq:t2i}), $\mathcal{L}_I(G,Q,\varphi)$ from Equation (\ref{eq:t2imiloss}).
 
 
+\subsection{Model architecture}
 
 
-\section{Our Approach}
+
+
 
 \section{Code Used}
 
