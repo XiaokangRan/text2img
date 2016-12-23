@@ -155,33 +155,32 @@ They explore various text encoder models, such as a convolutional network, a con
 
 \subsection{Objective}
 
-Text to Image GAN:
+Text to Image GAN\cite{text2image} is a conditional GAN, where the discriminator $D$ and the generator $G$ are conditioned on a text encoding $\varphi(t)$ for an image caption $t$. Thus, given a text caption, the generator is tasked with producing a realistic image described by the input caption. When training the generator, the authors also propose creating auxiliary text embeddings by interpolating between embeddings of text descriptions in the data, essentially providing infinite samples from the text embedding space to condition on.
+
+Based on Equation (\ref{eq:gan}), we can formulate the text to image GAN objective as
 \begin{align}
 \min_G \max_D\, \mathcal{V}(D,G, \varphi) =& \E_{(x,t) \sim p_{\text{data}}(x,t)}\left[\log D(x, \varphi(t))\right]\, + \nonumber\\
 &\E_{z\sim p_z(z), t\sim p_{\text{intdata}}(t)}\left[\log(1-D(G(z, \varphi(t)), \varphi(t)))\right] \label{eq:t2i}
 \end{align}
-where $t \sim p_{\text{intdata}}(t)$ is short for sampling as $t_1 \sim p_{\text{data}}(t), t_2 \sim p_{\text{data}}(t), \beta \sim [0,1], t = \beta t_1 + (1-\beta) t_2$.
+where $t \sim p_{\text{intdata}}(t)$ is short for sampling through the process $t_1 \sim p_{\text{data}}(t), t_2 \sim p_{\text{data}}(t), \beta \sim [0,1], t = \beta t_1 + (1-\beta) t_2$.
 
-
-
+We extend the text to image GAN by adding the ability to manipulate the output images, adjusting it manually to possibly better suit the textual description. We learn disentangled latent codes $c$, enabling each latent code to take on interpretable and semantically meaningful roles. We do this by extending InfoGAN to the text to image synthesis setting, where we want to maximize the mutual information between the latent codes $c$ and the conditionally generated image $G(z,c,\varphi(t))$:
 \begin{align}
 \mathcal{I}(c;G(z,c,\varphi(t))) &\geq \E_{t\sim p_{\text{intdata}}(t), x\sim G(z,c,\varphi(t))}\left[\E_{c'\sim p(c\mid x,t)}\left[\log Q(c'\mid x,t)\right]\right] + \mathcal{H}(c)
 \end{align}
 
-(the $p_{\text{intdata}}(t)$ here should probably be something like $p_t(t)$ since during real data we give it from data and during fake from intdata)
-
-Under suitable regularity conditions, we have the variational lower bound
+As described for InfoGAN, under suitable regularity conditions, we can obtain a variational lower bound for $\mathcal{I}(c;G(z,c,\varphi(t)))$:
 \begin{align}
 \mathcal{I}(c;G(z,c, \varphi(t))) &\geq \E_{c\sim p(c), t\sim p_{\text{intdata}}(t), x\sim G(z,c, \varphi(t))}\left[\log Q(c\mid x,t)\right] + \mathcal{H}(c) = \mathcal{L}_I(G,Q,\varphi) \label{eq:t2imiloss}
 \end{align}
 
-An alternate model is possible where we assume that the output of $Q$ is conditionally independent of $t$ given $x$, in which case $Q(c\mid x,t)$ simplifies to $Q(c\mid x)$. Equivalent to removing a direct edge between $t$ and $c'$ in the graphical model.
+We experiment with two possible models, one where the variational approximation $Q$ takes into consideration the textual description when looking at the generated image, and one where it doesn't. In the case where $Q$ does not consider the textual description, we assume in Equation (\ref{eq:t2imiloss}) that the output of $Q$ is conditionally independent of $t$ given $x$, in which case $Q(c\mid x,t)$ simplifies to $Q(c\mid x)$. This is equivalent to removing an edge between $t$ and $c$ sampled from $Q$ in the graphical model.
 
-Text to Image InfoGAN:
+Our text to image InfoGAN objective is given by
 \begin{align}
 \min_{G,Q} \max_D\, \mathcal{V}_{\text{t2i2GAN}}(D,G,Q,\varphi) = \mathcal{V}(D,G,\varphi) - \lambda \mathcal{L}_I(G,Q,\varphi)
 \end{align}
-where $\mathcal{V}(D,G,\varphi)$ from Equation (\ref{eq:t2i}), $\mathcal{L}_I(G,Q,\varphi)$ from Equation (\ref{eq:t2imiloss}).
+where $\mathcal{V}(D,G,\varphi)$ is defined in Equation (\ref{eq:t2i}), and $\mathcal{L}_I(G,Q,\varphi)$ in Equation (\ref{eq:t2imiloss}).
 
 
 \subsection{Model architecture}
