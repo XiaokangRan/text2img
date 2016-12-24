@@ -331,6 +331,11 @@ tried for them:
         generator/discriminator losses and hence we tested with $\lambda = 0.1$,
         $\lambda = 0.3$. Both these gave similar results as far as resultant
         generations are concerned.
+
+    \item Conditioning $Q$ on the text embeddings
+
+    We found that choosing to condition $Q$ on the text embeddings or not made little difference in the latent code semantics learnt. Even when explicitly providing the text embeddings to the subnetwork that estimates $Q(c\mid x,t)$, the latent codes learnt to capture the same meanings as the ones where $Q$ is conditioned only on the generated image.
+
 \end{itemize}
 
 \subsection{Convergence of the mutual information criterion}
