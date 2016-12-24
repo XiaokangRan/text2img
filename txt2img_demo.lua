@@ -22,6 +22,7 @@ opt = {
     filenames = '',
     dataset = 'cub',
     batchSize = 16,        -- number of samples to produce
+    num_img_row = 8,       -- number of images per row
     noisetype = 'normal',  -- type of noise distribution (uniform / normal).
     imsize = 1,            -- used to produce larger images. 1 = 64px. 2 = 80px, 3 = 96px, ...
     noisemode = 'random',  -- random / line / linefull1d / linefull
@@ -120,7 +121,7 @@ if not opt.web then
                 local fname_txt = string.format('%s/img_%d.txt', visdir, i)
                 images:add(1):mul(0.5)
                 --image.save(fname_png, image.toDisplayTensor(images,4,torch.floor(opt.batchSize/4)))
-                image.save(fname_png, image.toDisplayTensor(images,4,opt.batchSize/2))
+                image.save(fname_png, image.toDisplayTensor{input=images,padding=4,nrow=opt.num_img_row})
                 html = html .. string.format('\n<tr><td>%s</td><td><img src="%s"></td></tr>',
                 cur_raw_txt, fname_png)
                 os.execute(string.format('echo "%s" > %s', cur_raw_txt, fname_txt))
@@ -190,7 +191,7 @@ if opt.web then
         lfs.mkdir(visdir)
         fname_png = string.format('%s/img_web.png', visdir)
         images:add(1):mul(0.5)
-        image.save(fname_png, image.toDisplayTensor(images,4,opt.batchSize/2))
+        image.save(fname_png, image.toDisplayTensor{input=images,padding=4,nrow=opt.num_img_row})
 
         local body_txt = { script { type='text/javascript', js },
             img { src=fname_png, id='main' }, br,
@@ -229,7 +230,7 @@ if opt.web then
 
         images = net_gen:forward{noise, cur_fea_txt:cuda()}
         images:add(1):mul(0.5)
-        image.save(fname_png, image.toDisplayTensor(images,4,opt.batchSize/2))
+        image.save(fname_png, image.toDisplayTensor{input=images,padding=4,nrow=opt.num_img_row})
 
         res.send('true')
     end)
