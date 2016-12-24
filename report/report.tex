@@ -94,11 +94,15 @@
 \maketitle
 
 \begin{abstract}
-  Generation of realistic images given a text describing it is a challenging and interesting problem. With the recent successes of Generative Adversarial Networks in this field, we aim to explore it and use information theoretical extension to it to isolate meaningful latent variables.
+Generative adversarial networks have been shown to generate very realistic images by learning through a min-max game. Furthermore, these models are known to model image spaces more easily when conditioned on class labels. In this work, we consider conditioning on fine-grained textual descriptions, thus also enabling us to produce realistic images that correspond to the input text description. Additionally, we consider the task of learning disentangled representations for images through special latent codes, such that we can move them as knobs to alter the generated image. These latent codes take on very interpretable roles and are learnt in a completely unsupervised manner, using ideas from InfoGAN. We show that the learnt latent codes that encode much more variance and semantic interpretability as compared to standard GANs by experimenting on two datasets.
 \end{abstract}
 
 
 \section{Introduction}
+
+Building models of our complex real world is a fascinating and a very difficult problem. In this project, we tackle the problem of modeling concepts from textual data, and mapping them to the image space. We use generative adversarial networks (GANs)\cite{gan} to generate realistic images from raw textual descriptions. However, to go one step further, we also wish to learn disentangled representations of images that can be used to adjust the generated images in an interpretable way. Ideally, we would want a small number of controls to do so, rather than hundreds of knobs with no idea how those variables interact with each other.
+
+To achieve this, we consider the information theoretic extension of GAN, known as InfoGAN\cite{infogan}, to maximize the mutual information between certain latent codes and the image generated from them. We extend the previous text to image work \cite{text2image} using InfoGAN, and extend InfoGAN by conditioning on textual representations. We find that these latent codes can learn to pick up global semantics from the data distribution, so that once they are learnt, they can be labeled by the interpretable effect they have on the image to enable manual fine-tuning after generating an image from its caption.
 
 
 \section{Background}
@@ -340,16 +344,16 @@ We experimented with the Caltech University Birds dataset and the Oxford Flowers
 
 We started our implementation from Scott Reed's original codebase for Text to Image Synthesis, from \url{https://github.com/reedscot/icml2016}.
 
-Our final codebase can be found at \url{https://github.com/alemc2/text2img}. The \texttt{README.md} file in the code repository explains how to learn the model and generate images for queries. You can also choose to enable the argument \texttt{web} of \texttt{txt2img\_demo.lua} to get start a web server where you can submit a query, generate images and then adjust those images with sliders representing learnt latent codes.
+Our final codebase can be found at \url{https://github.com/alemc2/text2img}. The \texttt{README.md} file in the code repository explains how to learn the model and generate images for queries.
 
 \begin{figure}
     \centering
-    \includegraphics[width=\textwidth]{arch}
+    \includegraphics[width=0.8\textwidth]{web}
     \caption{A screenshot of a web interface to move sliders to adjust generated images from the caption. The sliders change the values of the latent codes.}
-    \label{fig:arch}
+    \label{fig:web}
 \end{figure}
 
-A screenshot of this web interface we developed is shown in Figure \ref{fig:web}.
+You can also choose to enable the argument \texttt{web} of \texttt{txt2img\_demo.lua} to start a web server where you can submit a query, generate images from that query and then adjust those images with sliders representing their learnt latent codes. A screenshot of this web interface we developed is shown in Figure \ref{fig:web}.
 
 
 \printbibliography
