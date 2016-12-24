@@ -94,11 +94,15 @@
 \maketitle
 
 \begin{abstract}
-  Generation of realistic images given a text describing it is a challenging and interesting problem. With the recent successes of Generative Adversarial Networks in this field, we aim to explore it and use information theoretical extension to it to isolate meaningful latent variables.
+Generative adversarial networks have been shown to generate very realistic images by learning through a min-max game. Furthermore, these models are known to model image spaces more easily when conditioned on class labels. In this work, we consider conditioning on fine-grained textual descriptions, thus also enabling us to produce realistic images that correspond to the input text description. Additionally, we consider the task of learning disentangled representations for images through special latent codes, such that we can move them as knobs to alter the generated image. These latent codes take on very interpretable roles and are learnt in a completely unsupervised manner, using ideas from InfoGAN. We show that the learnt latent codes that encode much more variance and semantic interpretability as compared to standard GANs by experimenting on two datasets.
 \end{abstract}
 
 
 \section{Introduction}
+
+Building models of our complex real world is a fascinating and a very difficult problem. In this project, we tackle the problem of modeling concepts from textual data, and mapping them to the image space. We use generative adversarial networks (GANs)\cite{gan} to generate realistic images from raw textual descriptions. However, to go one step further, we also wish to learn disentangled representations of images that can be used to adjust the generated images in an interpretable way. Ideally, we would want a small number of controls to do so, rather than hundreds of knobs with no idea how those variables interact with each other.
+
+To achieve this, we consider the information theoretic extension of GAN, known as InfoGAN\cite{infogan}, to maximize the mutual information between certain latent codes and the image generated from them. We extend the previous text to image work \cite{text2image} using InfoGAN, and extend InfoGAN by conditioning on textual representations. We find that these latent codes can learn to pick up global semantics from the data distribution, so that once they are learnt, they can be labeled by the interpretable effect they have on the image to enable manual fine-tuning after generating an image from its caption.
 
 
 \section{Background}
@@ -205,23 +209,13 @@ where $\mathcal{V}(D,G,\varphi)$ is defined in Equation (\ref{eq:t2i}), and $\ma
     \label{fig:arch}
 \end{figure}
 
-Our model architecture is very similar to \cite{text2image}, which itself is based on the DCGAN architecture. The generator and the discriminator are both conditioned on the text embedding $\varphi(t)$, which comes from the data distribution in case the discriminator is looking at a real image, or from interpolations of true text embeddings in case of generations. The model architecture is illustrated at a high level in Figure \ref{fig:arch}.
+Our model architecture is very similar to \cite{text2image}, which itself is based on the DCGAN architecture. The generator and the discriminator are both conditioned on the text embedding $\varphi(t)$, which comes from the data distribution in case the discriminator is looking at a real image, or from interpolations of true text embeddings in case of generations. Our model architecture is illustrated in Figure \ref{fig:arch}.
 
 The generator takes as input a vector formed by the concatenation of latent codes $c$, noise $z$, and the text embedding. We choose the prior for $z$ to be a Gaussian with zero mean and identity covariance. We sample $c$ from a multivariate uniform distribution between $-1$ and $1$, but consider the prior $p(c)$ to be a Gaussian with zero mean and identity covariance for the mutual information lower bound defined in Equation (\ref{eq:t2imiloss}). The text embedding $\varphi(t)$ is passed through a fully-connected network and reduced to a size of 128 dimensions, followed by a LeakyReLU, before concatenation to the input vector.
 
 Another transformation on the text embedding $\varphi(t)$ followed by rectification is done for the discriminator. When the spatial dimension of the DCGAN discriminator is $4\times 4$, we replicate this reduced embedding spatially and concatenate it to the $4\times 4$ discriminator output. A $1\times 1$ convolution followed by rectification and another $4\times 4$ convolution is performed obtain the final discriminator value.
 
-If we want to consider $Q(c\mid x,t)$ (that is, consider the textual description in $Q$ in addition to the generated image), then the depth concatenated $4\times 4$ output is passed through a different $1\times 1$ convolution followed by rectification. The output is then flattened and a fully connected layer maps it to a vector representing the mean and diagonal covariance for the latent codes in $Q(c\mid x,t)$. The loss propagated from this layer is the negative log-likelihood of the latent code $c$ used to generate the image under the distribution $Q$. If we instead want to only consider $Q(c\mid x)$, then we use the $4\times 4$ discriminator output before depth concatenation for the convolutional layer of $Q$.
-
-
-
-
- After the penultimate layer of the DCGAN discriminator and the concatenation of the text embedding, the output 
-
-
-Based on whether we want to consider the textual description in $Q$ or not, we 
-
-
+If we want to consider $Q(c\mid x,t)$ (that is, consider the textual description in $Q$ in addition to the generated image), then the depth concatenated $4\times 4$ output is passed through a different $1\times 1$ convolution followed by rectification. The output is then flattened and a fully connected layer maps it to a vector representing the mean and diagonal covariance for the latent codes in $Q(c\mid x,t)$. If we instead want to only consider $Q(c\mid x)$, then we use the $4\times 4$ discriminator output before depth concatenation for the convolutional layer of $Q$.
 
 
 
@@ -373,6 +367,9 @@ presented as animations. Please open in Acrobat Reader to view the same.}
 \end{figure}
 \section{Conclusion}
 
+Our goal was to use a textual description to generate an image corresponding to it, and then adjust it to get reasonable generations. To minimize the number of knobs we need to move to make such adjustments, we considered using the InfoGAN idea to maximize the mutual information between latent codes and the generated image.
+
+We experimented with the Caltech University Birds dataset and the Oxford Flowers dataset, and showed that we are able to learn disentangled and interpretable semantic roles for each latent code. We compare our interpolations to interpolations without the mutual information criterion, and observed that the latent codes encode much more variance suitable for interpretable exploration of the image space.
 
 
 
@@ -380,7 +377,16 @@ presented as animations. Please open in Acrobat Reader to view the same.}
 
 We started our implementation from Scott Reed's original codebase for Text to Image Synthesis, from \url{https://github.com/reedscot/icml2016}.
 
-Our final codebase can be found at \url{https://github.com/alemc2/text2img}.
+Our final codebase can be found at \url{https://github.com/alemc2/text2img}. The \texttt{README.md} file in the code repository explains how to learn the model and generate images for queries.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{web}
+    \caption{A screenshot of a web interface to move sliders to adjust generated images from the caption. The sliders change the values of the latent codes.}
+    \label{fig:web}
+\end{figure}
+
+You can also choose to enable the argument \texttt{web} of \texttt{txt2img\_demo.lua} to start a web server where you can submit a query, generate images from that query and then adjust those images with sliders representing their learnt latent codes. A screenshot of this web interface we developed is shown in Figure \ref{fig:web}.
 
 
 \printbibliography
