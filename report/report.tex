@@ -205,39 +205,116 @@ where $\mathcal{V}(D,G,\varphi)$ is defined in Equation (\ref{eq:t2i}), and $\ma
 \section{Code Used}
 
 \section{Experimental Results}
-\begin{table}[H]
-\begin{tabularx}{\textwidth}{|c|X|X|X|X|X|X|X|X|X|X|}
-\hline
-Latent Code & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\
-\hline
-%\multirow{5}{\hsize}{this vibrant red bird has a pointed black beak}
-%\foreach \code in {1,...,5}{
-%    \eaddtabtoks{\code}
-%    \foreach \img in {1,...,10}{
-%        \eaddtabtoks{& \includegraphics{cub_5c_l01_txt_btch2/img_1_\code_\img}}
-%    }
-%    \addtabtoks{\\\hline}
-%}
-%\printtabtoks
-%\resettabtoks
-1 & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_1} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_2} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_3} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_4} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_5} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_6} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_7} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_8} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_9} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_1_10} \\\hline
-2 & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_1} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_2} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_3} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_4} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_5} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_6} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_7} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_8} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_9} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_2_10} \\\hline
-3 & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_1} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_2} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_3} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_4} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_5} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_6} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_7} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_8} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_9} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_3_10} \\\hline
-4 & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_1} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_2} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_3} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_4} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_5} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_6} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_7} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_8} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_9} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_4_10} \\\hline
-5 & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_1} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_2} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_3} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_4} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_5} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_6} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_7} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_8} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_9} & \includegraphics[keepaspectratio,height=50px]{cub_5c_l01_txt_btch2/img_1_5_10} \\\hline
-\end{tabularx}
-\end{table}
+\subsection{Datasets}
+For our experiments we used 2 datasets: 
+\begin{itemize}
+    \item The Caltech University Birds Dataset \cite{cub} - It is an image
+        dataset with 6033 photos of 200 bird species. It also contains details
+        such as species label, bounding boxes, segmentation and positional
+        attributes which we don't use for our purposes.
+    \item The Oxford Flowers Dataset \cite{flowers} - It is an image dataset of
+        102 flower categories with between 40 to 358 images per category. It
+        also contains class labels, segmentation masks which we don't make use
+        of for our problem.
+\end{itemize}
+We do however need text captions for these datasets which we obtain from the data
+curated for \cite{visualdesc}.
+
+\subsection{Conditioning image generation with captions}
+We aim to compare the latent codes used to generate the images in the original
+model vs our model. In the original model it has been shown that the text
+encodings capture the image content whereas the latent noise vector captures the
+style of the image such as orientation, background etc. However to illustrate
+this the original work \cite{text2image} inverts the generator to obtain the
+noise code $z$ for similar images (based on bird orientation, background color
+etc) and shows that they have simlar noise vector and that the style can be
+transferred to other images by simply changing the text encodings. However the
+style isn't completely disentangled as it is present in very high dimensional
+space. This can be seen in the images below where variations of the first 5
+dimensions of the latent codes don't really offer any drastic style change.
 
 \begin{table}[H]
-\begin{tabularx}{\textwidth}{|c|X|X|X|X|X|X|X|X|X|X|}
+\begin{tabularx}{\textwidth}{|c|X|X|X|X|X|}
 \hline
-Latent Code & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\
+Latent Code & -2 & -1 & 0 & 1 & 2\\
 \hline
-1 & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_1} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_2} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_3} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_4} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_5} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_6} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_7} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_8} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_9} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_1_10} \\\hline
-2 & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_1} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_2} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_3} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_4} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_5} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_6} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_7} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_8} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_9} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_2_10} \\\hline
-3 & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_1} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_2} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_3} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_4} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_5} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_6} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_7} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_8} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_9} & \includegraphics[keepaspectratio,height=50px]{cub_3c_2d_l01_txt_btch2/img_1_3_10} \\\hline
+1 & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_1_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_1_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_1_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_1_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_1_5} \\\hline
+2 & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_2_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_2_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_2_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_2_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_2_5} \\\hline
+3 & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_3_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_3_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_3_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_3_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_3_5} \\\hline
+4 & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_4_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_4_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_4_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_4_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_4_5} \\\hline
+5 & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_5_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_5_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_5_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_5_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{base_full_btch2/img_1_5_5} \\\hline
 \end{tabularx}
+\caption{Table of generated images with change of the first 5 latent code
+dimensions from -2 to 2 for the original model}
 \end{table}
+In the table above we use the query text 'this vibrant red bird has a pointed
+black beak'. We shall continue to use the same query to make meaningful
+comparisons.
+
+\subsection{Effect of Mutual Information Criteria}
+By incorporating the mutual information maximization as mentioned earlier, our
+model succeds in disentagling the style variable onto distinct dimensions of the
+noise vector. In fact on the birds dataset it manages to disentangle all the
+style/content factors mentioned in \cite{text2image} such as orientation, shape
+and background. The network learns to disentangle these factors onto the latent
+dimensions we try to maximize the mutual information on. Generations from this
+model are shown below.
+\begin{table}[H]
+\begin{tabularx}{\textwidth}{|c|X|X|X|X|X|}
+\hline
+Latent Code & -2 & -1 & 0 & 1 & 2\\
+\hline
+1 & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_1_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_1_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_1_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_1_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_1_5} \\\hline
+2 & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_2_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_2_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_2_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_2_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_2_5} \\\hline
+3 & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_3_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_3_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_3_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_3_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{cub_3c_2d_l01_txt_btch2/img_1_3_5} \\\hline
+\end{tabularx}
+\caption{Table of generated images with change of the designated 3 continuous
+latent code dimensions from -2 to 2 for our model}
+\end{table}
+As we can see in the table above we see that the first dimension has learnt to
+disentangle rotations of the image, second dimension has learnt to disentangle
+the background and the third dimension has learnt to disentangle the size of the
+bird.
+
+Our model accomplishes the same effect in the flowers dataset as well. The
+latent code disentangling of the flowers dataset is shown below.
+\begin{table}[H]
+\begin{tabularx}{\textwidth}{|c|X|X|X|X|X|}
+\hline
+Latent Code & -2 & -1 & 0 & 1 & 2\\
+\hline
+1 & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_1_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_1_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_1_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_1_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_1_5} \\\hline
+2 & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_2_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_2_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_2_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_2_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_2_5} \\\hline
+3 & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_3_1} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_3_2} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_3_3} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_3_4} & \includegraphics[keepaspectratio,width=0.7\hsize]{flowers_3c_5d_l01_notxt_btch2/img_2_3_5} \\\hline
+\end{tabularx}
+\caption{Table of generated images for the flowers dataset with change of the
+    designated 3 continuous latent code dimensions from -2 to 2 for our model}
+\end{table}
+
+\subsection{Other Experiments}
+For this task we have a couple of hyperparameters which had to be tuned to give
+relevant results. Some of these are detailed below along with some values we
+tried for them:
+\begin{itemize}
+    \item Number of continuous latent codes to apply the mutual information
+        criteria on - Ideally this should be decided based on the structure of
+        the data. For our case, we started of with 5 continuous latent codes to
+        realize that only 3 of those were identifying distinct features such as
+        orientation, background and size. The other 2 were learning a
+        combination of these 3 on the birds dataset. Hence we decided to use 3
+        continuous latent codes for the mutual information criteria. We decided
+        to use the same number for the flowers dataset as well as there were
+        only about so much variation in that dataset as well.
+    \item Weight of the mutual information criteria $\lambda$- We want the
+        mutual information criteria to be scaled by a factor such that it falls
+        in the scale of the generator and discriminator losses. This avoids the
+        mutual information criteria from dominating the losses which in turn
+        would affect the backpropagation. For our problem we noticed that the
+        mutual information criteria was about 3-10 times larger than the
+        generator/discriminator losses and hence we tested with $\lambda = 0.1$,
+        $\lambda = 0.3$. Both these gave similar results as far as resultant
+        generations are concerned.
+\end{itemize}
 %\animategraphics[loop,controls,autoplay]{12}{cub_5c_l01_notxt/img_1_3_}{1}{10}
 \section{Conclusion}
 
