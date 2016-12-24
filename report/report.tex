@@ -345,19 +345,25 @@ experiments.
 \caption{Plot of the mutual information between latent codes and generated image vs. epochs.}
 \label{fig:miplot}
 \end{figure}
-%\subsection{More examples and generalizations}
-%We present more examples to indicate that the latent code interpretation
-%generalizes to all examples. This indicates that style transfer is very easy
-%given these latent codes. We also present examples where the text descriptions
-%are made realistic yet very different from any caption present in the dataset to
-%see how the model generalizes to unknown examples.
-%
-%\textit{Note: In interest of space and for better visualization the examples are
-%presented as animations. Please open in Acrobat Reader to view the same.}
-%\begin{figure}
-%\animategraphics[loop,controls,autoplay,width=\textwidth]{6}{cub_3c_2d_l01_txt/img_5_1_}{1}{10}
-%\caption{The generations of birds for the text 'a white bird with a very long neck and a small red beak.'}
-%\end{figure}
+\subsection{More examples and generalizations}
+We present more examples to indicate that the latent code interpretation
+generalizes to all examples. This indicates that style transfer is very easy
+given these latent codes. We also present examples where the text descriptions
+are made realistic yet very different from any caption present in the dataset to
+see how the model generalizes to unknown examples. These are shown in Fig
+\ref{animation}
+
+\textit{Note: In interest of space and for better visualization the examples are
+presented as animations. Please open in Acrobat Reader to view the same.}
+\begin{figure}
+\animategraphics[loop,controls,autoplay,width=\textwidth]{6}{cub_3c_2d_l01_txt/img_5_1_}{1}{10}
+\animategraphics[loop,controls,autoplay,width=\textwidth]{6}{cub_3c_2d_l01_txt/img_5_2_}{1}{10}
+\animategraphics[loop,controls,autoplay,width=\textwidth]{6}{cub_3c_2d_l01_txt/img_5_3_}{1}{10}
+\caption{The generations of birds for the text 'a white bird with a very long
+neck and a small red beak.' with variation of each of the 3 latent codes in
+order}
+\label{animation}
+\end{figure}
 \section{Conclusion}
 
 Our goal was to use a textual description to generate an image corresponding to it, and then adjust it to get reasonable generations. To minimize the number of knobs we need to move to make such adjustments, we considered using the InfoGAN idea to maximize the mutual information between latent codes and the generated image.
