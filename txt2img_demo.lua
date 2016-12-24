@@ -21,8 +21,8 @@ end
 opt = {
     filenames = '',
     dataset = 'cub',
-    batchSize = 16,        -- number of samples to produce
-    num_img_row = 8,       -- number of images per row
+    batchSize = 4,         -- number of samples to produce
+    num_img_row = 1,       -- number of images per row
     noisetype = 'normal',  -- type of noise distribution (uniform / normal).
     imsize = 1,            -- used to produce larger images. 1 = 64px. 2 = 80px, 3 = 96px, ...
     noisemode = 'random',  -- random / line / linefull1d / linefull
@@ -37,7 +37,7 @@ opt = {
     cont_codes = 3,         -- number of continuous latent codes
     disc_codes = 5,         -- number of discrete latent codes
     cont_range = 2.0,       -- vary uniformly between [-cont_range, cont_range]
-    cont_samples = 10,      -- number of images between [-cont_range, cont_range] to generate (if not web)
+    cont_samples = 5,       -- number of images between [-cont_range, cont_range] to generate (if not web)
     web = false,            -- use web frontend
     port = '8081'           -- which port to use
 }
@@ -117,13 +117,17 @@ if not opt.web then
                 local visdir = string.format('results/%s', opt.dataset)
                 lfs.mkdir('results')
                 lfs.mkdir(visdir)
-                local fname_png = string.format('%s/img_%d_%d_%d.png', visdir, i, j, idx)
-                local fname_txt = string.format('%s/img_%d.txt', visdir, i)
                 images:add(1):mul(0.5)
-                --image.save(fname_png, image.toDisplayTensor(images,4,torch.floor(opt.batchSize/4)))
-                image.save(fname_png, image.toDisplayTensor{input=images,padding=4,nrow=opt.num_img_row})
-                html = html .. string.format('\n<tr><td>%s</td><td><img src="%s"></td></tr>',
-                cur_raw_txt, fname_png)
+                local fname_txt = string.format('%s/img_%d.txt', visdir, i)
+                for c = 1, opt.batchSize do
+                    local fname_dir = string.format('%s/n%d_g%d', visdir, i, c)
+                    lfs.mkdir(fname_dir)
+                    local fname_png = string.format('%s/img_c%d_i%d.png', fname_dir, j, idx)
+                    --image.save(fname_png, image.toDisplayTensor(images,4,torch.floor(opt.batchSize/4)))
+                    image.save(fname_png, image.toDisplayTensor{input=images[{c, {}, {}, {}}],padding=4,nrow=opt.num_img_row})
+                end
+                --html = html .. string.format('\n<tr><td>%s</td><td><img src="%s"></td></tr>',
+                --cur_raw_txt, fname_png)
                 os.execute(string.format('echo "%s" > %s', cur_raw_txt, fname_txt))
             end
         end
