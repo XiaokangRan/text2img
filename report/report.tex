@@ -138,7 +138,8 @@ Thus, by maximizing $L_I(G,Q)$, we would maximize the mutual information between
 \end{align}
 where $V(D,G)$ is defined in Equation (\ref{eq:gan}). $\lambda$ is a hyperparameter, that is tuned to weigh the mutual information criterion in the learning objective. The authors suggest setting this value such that $\lambda L_I$ is on the same scale as the GAN objective $V$.
 
-In practice, $Q$ shares all of its layers and parameters with $D$ upto $D$'s penultimate layer, following with an additional layer that outputs the sufficient statistics of the distribution $Q(c\mid x)$. For a Gaussian, these are the mean and diagonal covariance values. For discrete latent codes, these are the softmax logits. $Q$ converges very quickly during training, and thus it essentially comes for free with GAN, without the need for additional training time or model capacity beyond a single layer.
+In practice, $Q$ shares all of its layers and parameters with $D$ upto $D$'s
+penultimate layer, followed by an additional layer that outputs the sufficient statistics of the distribution $Q(c\mid x)$. For a Gaussian, these are the mean and diagonal covariance values. For discrete latent codes, these are the softmax logits. $Q$ converges very quickly during training, and thus it essentially comes for free with GAN, without the need for additional training time or model capacity beyond a single layer.
 
 
 \subsection{Deep symmetric structured joint embedding}
