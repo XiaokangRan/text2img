@@ -85,16 +85,16 @@ Generative adversarial networks have been shown to generate very realistic image
 
 \section{Introduction}
 
-Building models of our complex real world is a fascinating and a very difficult problem. In this project, we tackle the problem of modeling concepts from textual data, and mapping them to the image space. We use generative adversarial networks (GANs)\cite{gan} to generate realistic images from raw textual descriptions. However, to go one step further, we also wish to learn disentangled representations of images that can be used to adjust the generated images in an interpretable way. Ideally, we would want a small number of controls to do so, rather than hundreds of knobs with no idea how those variables interact with each other.
+Building models of our complex real world is a fascinating and a very difficult problem. In this project, we tackle the problem of modeling concepts from textual data, and mapping them to the image space. We use generative adversarial networks (GANs) (\cite{gan}) to generate realistic images from raw textual descriptions. However, to go one step further, we also wish to learn disentangled representations of images that can be used to adjust the generated images in an interpretable way. Ideally, we would want a small number of controls to do so, rather than hundreds of knobs with no idea how those variables interact with each other.
 
-To achieve this, we consider the information theoretic extension of GAN, known as InfoGAN\cite{infogan}, to maximize the mutual information between certain latent codes and the image generated from them. We extend the previous text to image work \cite{text2image} using InfoGAN, and extend InfoGAN by conditioning on textual representations. We find that these latent codes can learn to pick up global semantics from the data distribution, so that once they are learnt, they can be labeled by the interpretable effect they have on the image to enable manual fine-tuning after generating an image from its caption.
+To achieve this, we consider the information theoretic extension of GAN, known as InfoGAN (\cite{infogan}), to maximize the mutual information between certain latent codes and the image generated from them. We extend the previous text to image work (\cite{text2image}) using InfoGAN, and extend InfoGAN by conditioning on textual representations. We find that these latent codes can learn to pick up global semantics from the data distribution, so that once they are learnt, they can be labeled by the interpretable effect they have on the image to enable manual fine-tuning after generating an image from its caption.
 
 
 \section{Background}
 
 \subsection{Generative Adversarial Network (GAN)}
 
-Generative Adversarial Networks (GANs) \cite{gan} have been tremendously successful in learning to generate realistic images by playing a min-max game. A discriminator $D$ is trained to classify input images as coming from the data distribution (`real') or coming from the generator (`fake'). A generator $G$ is trained to fool the discriminator by producing images that are indistinguishable from real images for the discriminator. The generator takes as input a noise vector $z$, coming from a prior distribution, and maps it to a point in the pixel space, which represents an image. The prior noise distribution usually has zero mean and is a Gaussian or a uniform distribution.
+Generative Adversarial Networks (GANs) (\cite{gan}) have been tremendously successful in learning to generate realistic images by playing a min-max game. A discriminator $D$ is trained to classify input images as coming from the data distribution (`real') or coming from the generator (`fake'). A generator $G$ is trained to fool the discriminator by producing images that are indistinguishable from real images for the discriminator. The generator takes as input a noise vector $z$, coming from a prior distribution, and maps it to a point in the pixel space, which represents an image. The prior noise distribution usually has zero mean and is a Gaussian or a uniform distribution.
 
 The GAN objective can thus be formulated as
 \begin{align}
@@ -108,7 +108,7 @@ The signal for the generator to update its generative model comes from the discr
 
 To get better quality generations from the generators of GANs, \cite{dcgan} presented an architecture called deep convolutional GAN (DCGAN) where the generator and the discriminator are convolutional networks that mirror each other in structure.
 
-They also replace the pooling layers with strided convolutions in the discriminator and fractional-strided convolutions in the generator. Additionally, they use the LeakyReLU activation in the discriminator for all layers instead of ReLU. These two additions ensure that there are no sparse gradients in the discriminator, which helps with the stability of the min-max objective training. To alleviate internal covariate shift and help make training more stable, they use batch normalization \cite{batchnorm} in both the generator and the discriminator. There are no fully connected hidden layers, enabling deeper models.
+They also replace the pooling layers with strided convolutions in the discriminator and fractional-strided convolutions in the generator. Additionally, they use the LeakyReLU activation in the discriminator for all layers instead of ReLU. These two additions ensure that there are no sparse gradients in the discriminator, which helps with the stability of the min-max objective training. To alleviate internal covariate shift and help make training more stable, they use batch normalization (\cite{batchnorm}) in both the generator and the discriminator. There are no fully connected hidden layers, enabling deeper models.
 
 The text to image architecture we use is based on the DCGAN architecture.
 
@@ -116,7 +116,7 @@ The text to image architecture we use is based on the DCGAN architecture.
 
 \subsection{Information Maximizing GAN (InfoGAN)}
 
-Information maximizing GAN (InfoGAN)\cite{infogan} is an extension to GAN that learns disentangled representations in an unsupervised manner. Unlike the standard GAN, where an image is generated from a noise vector $z$, an image in this case is generated from a noise vector $z$ and latent codes $c$. Like $z$, we define a prior distribution over $c$ with zero mean, which is usually taken to be a Gaussian or a uniform distribution. $c$ can also contain discrete latent codes, which can have a discrete uniform prior.
+Information maximizing GAN (InfoGAN) (\cite{infogan}) is an extension to GAN that learns disentangled representations in an unsupervised manner. Unlike the standard GAN, where an image is generated from a noise vector $z$, an image in this case is generated from a noise vector $z$ and latent codes $c$. Like $z$, we define a prior distribution over $c$ with zero mean, which is usually taken to be a Gaussian or a uniform distribution. $c$ can also contain discrete latent codes, which can have a discrete uniform prior.
 
 To learn disentangled representations, the model maximizes the mutual information between $c$ and the generated image $G(z,c)$, where the mutual information is given by
 \begin{align}
@@ -157,7 +157,7 @@ They explore various text encoder models, such as a convolutional network, a con
 
 \subsection{Objective}
 
-Text to Image GAN\cite{text2image} is a conditional GAN, where the discriminator $D$ and the generator $G$ are conditioned on a text encoding $\varphi(t)$ for an image caption $t$. Thus, given a text caption, the generator is tasked with producing a realistic image described by the input caption. When training the generator, the authors also propose creating auxiliary text embeddings by interpolating between embeddings of text descriptions in the data, essentially providing infinite samples from the text embedding space to condition on.
+Text to Image GAN (\cite{text2image}) is a conditional GAN, where the discriminator $D$ and the generator $G$ are conditioned on a text encoding $\varphi(t)$ for an image caption $t$. Thus, given a text caption, the generator is tasked with producing a realistic image described by the input caption. When training the generator, the authors also propose creating auxiliary text embeddings by interpolating between embeddings of text descriptions in the data, essentially providing infinite samples from the text embedding space to condition on.
 
 Based on Equation (\ref{eq:gan}), we can formulate the text to image GAN objective as
 \begin{align}
@@ -209,11 +209,11 @@ If we want to consider $Q(c\mid x,t)$ (that is, consider the textual description
 \subsection{Datasets}
 For our experiments we used 2 datasets: 
 \begin{itemize}
-    \item The Caltech University Birds Dataset \cite{cub} - It is an image
+    \item The Caltech University Birds Dataset (\cite{cub}) - It is an image
         dataset with 6033 photos of 200 bird species. It also contains details
         such as species label, bounding boxes, segmentation and positional
         attributes which we don't use for our purposes.
-    \item The Oxford Flowers Dataset \cite{flowers} - It is an image dataset of
+    \item The Oxford Flowers Dataset (\cite{flowers}) - It is an image dataset of
         102 flower categories with between 40 to 358 images per category. It
         also contains class labels, segmentation masks which we don't make use
         of for our problem.
@@ -226,7 +226,7 @@ We aim to compare the latent codes used to generate the images in the original
 model vs our model. In the original model it has been shown that the text
 encodings capture the image content whereas the latent noise vector captures the
 style of the image such as orientation, background etc. However to illustrate
-this the original work \cite{text2image} inverts the generator to obtain the
+this, \cite{text2image} invert the generator to obtain the
 noise code $z$ for similar images (based on bird orientation, background color
 etc) and shows that they have simlar noise vector and that the style can be
 transferred to other images by simply changing the text encodings. However the
@@ -327,7 +327,7 @@ tried for them:
 \end{itemize}
 
 \subsection{Convergence of Mutual Information Criteria}
-As indicated in Infogan \cite{infogan} the mutual information criteria quickly maximizes to
+As indicated in InfoGAN (\cite{infogan}) the mutual information criteria quickly maximizes to
 a value of around 8-10 depending on the dataset and our choice of $\lambda$.
 This indicates that the bound is tight and that our network maximizes the mutual
 information quite efficiently. This is shown in the figure \ref{fig:miplot} for some of our
