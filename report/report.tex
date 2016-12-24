@@ -246,7 +246,7 @@ noise code $z$ for similar images (based on bird orientation, background color
 etc) and shows that they have simlar noise vector and that the style can be
 transferred to other images by simply changing the text encodings. However the
 style isn't completely disentangled as it is present in very high dimensional
-space. This can be seen in the images below where variations of the first 5
+space. This can be seen in the Table \ref{table:cub} where variations of the first 5
 dimensions of the latent codes don't really offer any drastic style change.
 
 \begin{table}[H]
@@ -262,8 +262,9 @@ Latent Code & -2 & -1 & 0 & 1 & 2\\
 \end{tabularx}
 \caption{Table of generated images with change of the first 5 latent code
 dimensions from -2 to 2 for the original model}
+\label{table:cub}
 \end{table}
-In the table above we use the query text 'this vibrant red bird has a pointed
+In Table \ref{table:cub} we use the query text 'this vibrant red bird has a pointed
 black beak'. We shall continue to use the same query to make meaningful
 comparisons.
 
@@ -274,8 +275,8 @@ noise vector. In fact on the birds dataset it manages to disentangle all the
 style/content factors mentioned in \cite{text2image} such as orientation, shape
 and background. The network learns to disentangle these factors onto the latent
 dimensions we try to maximize the mutual information on. Generations from this
-model are shown below.
-\begin{table}[H]
+model are shown in Table \ref{table:cub_mi}.
+\begin{table}
 \begin{tabularx}{\textwidth}{|c|X|X|X|X|X|}
 \hline
 Latent Code & -2 & -1 & 0 & 1 & 2\\
@@ -286,15 +287,17 @@ Latent Code & -2 & -1 & 0 & 1 & 2\\
 \end{tabularx}
 \caption{Table of generated images with change of the designated 3 continuous
 latent code dimensions from -2 to 2 for our model}
+\label{table:cub_mi}
 \end{table}
-As we can see in the table above we see that the first dimension has learnt to
+As we can see in Table \ref{table:cub_mi} we see that the first dimension has learnt to
 disentangle rotations of the image, second dimension has learnt to disentangle
 the background and the third dimension has learnt to disentangle the size of the
 bird.
 
 Our model accomplishes the same effect in the flowers dataset as well. The
-latent code disentangling of the flowers dataset is shown below.
-\begin{table}[H]
+latent code disentangling of the flowers dataset is shown in Table
+\ref{table:flowers_mi}.
+\begin{table}
 \begin{tabularx}{\textwidth}{|c|X|X|X|X|X|}
 \hline
 Latent Code & -2 & -1 & 0 & 1 & 2\\
@@ -305,7 +308,13 @@ Latent Code & -2 & -1 & 0 & 1 & 2\\
 \end{tabularx}
 \caption{Table of generated images for the flowers dataset with change of the
     designated 3 continuous latent code dimensions from -2 to 2 for our model}
+\label{table:flowers_mi}
 \end{table}
+In Table \ref{table:flowers_mi} we use the query text 'the center is yellow surrounded by
+wavy dark purple petals'. We see that in the case of the flowers dataset it has
+learnt to disentangle elevation of the flower on the first dimension, rotation
+of the flower with respect to the stem is captured by the second dimension and
+the elongation along -45/+45 degree axis is captured by the the third dimension.
 
 \subsection{Other Experiments}
 For this task we have a couple of hyperparameters which had to be tuned to give
@@ -331,6 +340,19 @@ tried for them:
         $\lambda = 0.3$. Both these gave similar results as far as resultant
         generations are concerned.
 \end{itemize}
+
+\subsection{Convergence of Mutual Information Criteria}
+As indicated in Infogan \cite{infogan} the mutual information criteria quickly maximizes to
+a value of around 8-10 depending on the dataset and our choice of $\lambda$.
+This indicates that the bound is tight and that our network maximizes the mutual
+information quite efficiently. This is shown in the figure \ref{fig:miplot} for some of our
+experiments.
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{miplot}
+\caption{Plot of Mutual Information vs Epochs}
+\label{fig:miplot}
+\end{figure}
 %\animategraphics[loop,controls,autoplay]{12}{cub_5c_l01_notxt/img_1_3_}{1}{10}
 \section{Conclusion}
 
